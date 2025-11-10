@@ -12,29 +12,61 @@
  * 如果你的项目同样使用了scss预处理，你也可以直接在你的 scss 代码中使用如下变量，同时无需 import 这个文件
  */
 
-/* 颜色变量 */
+/* 颜色变量 - 现代简约风格 */
 
-/* 行为相关颜色 */
-$uni-color-primary: #007aff;
-$uni-color-success: #4cd964;
-$uni-color-warning: #f0ad4e;
-$uni-color-error: #dd524d;
+/* 主色调：采用柔和的蓝色系，传达科技感与专业性 */
+$primary-color: #3B82F6;       // 主蓝色
+$primary-light: #93C5FD;       // 浅蓝
+$primary-dark: #2563EB;        // 深蓝
 
-/* 文字基本颜色 */
-$uni-text-color: #333; // 基本色
-$uni-text-color-inverse: #fff; // 反色
-$uni-text-color-grey: #999; // 辅助灰色，如加载更多的提示信息
-$uni-text-color-placeholder: #808080;
-$uni-text-color-disable: #c0c0c0;
+/* 辅助色：提供视觉层次和交互反馈 */
+$success-color: #10B981;       // 绿色
+$warning-color: #F59E0B;       // 橙色
+$error-color: #EF4444;         // 红色
+$info-color: #6366F1;          // 靛蓝色
 
-/* 背景颜色 */
-$uni-bg-color: #fff;
-$uni-bg-color-grey: #f8f8f8;
-$uni-bg-color-hover: #f1f1f1; // 点击状态颜色
-$uni-bg-color-mask: rgba(0, 0, 0, 0.4); // 遮罩颜色
+/* 文字颜色系统 */
+$text-primary: #1F2937;        // 主要文字 - 深色
+$text-secondary: #4B5563;      // 次要文字
+$text-tertiary: #9CA3AF;       // 辅助文字
+$text-disabled: #D1D5DB;       // 禁用文字
+$text-inverse: #FFFFFF;        // 反色文字
+
+/* 背景颜色系统 */
+$background-primary: #F9FAFB;  // 主背景色
+$background-secondary: #FFFFFF; // 次级背景（卡片等）
+$background-tertiary: #F3F4F6; // 三级背景
+$background-overlay: rgba(0, 0, 0, 0.5); // 遮罩层
 
 /* 边框颜色 */
-$uni-border-color: #c8c7cc;
+$border-light: #E5E7EB;        // 浅色边框
+$border-medium: #D1D5DB;       // 中等边框
+$border-dark: #9CA3AF;         // 深色边框
+
+/* 阴影 */
+$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+/* 渐变色 */
+$gradient-primary: linear-gradient(135deg, $primary-color 0%, $info-color 100%);
+$gradient-secondary: linear-gradient(135deg, #60A5FA 0%, #818CF8 100%);
+
+/* 兼容uni-app原有变量 */
+$uni-color-primary: $primary-color;
+$uni-color-success: $success-color;
+$uni-color-warning: $warning-color;
+$uni-color-error: $error-color;
+$uni-text-color: $text-primary;
+$uni-text-color-inverse: $text-inverse;
+$uni-text-color-grey: $text-tertiary;
+$uni-text-color-placeholder: $text-tertiary;
+$uni-text-color-disable: $text-disabled;
+$uni-bg-color: $background-primary;
+$uni-bg-color-grey: $background-tertiary;
+$uni-bg-color-hover: #E5E7EB;
+$uni-bg-color-mask: $background-overlay;
+$uni-border-color: $border-light;
 
 /* 尺寸变量 */
 

@@ -1,760 +1,761 @@
 <template>
-	<view class="container">
-		<navBar @newConversation="newConversation" @viewHistory="viewHistory" @openModelSelector="openModelSelector" />
-		<!-- 消息列表 -->
-		<view class="message-list-wrapper">
-			<scroll-view class="message-list" scroll-y :scroll-into-view="scrollViewToId" :scroll-with-animation="true">
-				<view v-for="(message, index) in messages" :key="message.id" :id="'msg-' + message.id"
-					:class="['message-item', message.sender === 'user' ? 'user-message' : 'ai-message']">
-					<!-- AI 消息布局 -->
-					<template v-if="message.sender === 'ai'">
-						<view class="avatar">AI</view>
-						<view class="message-content">
-							<view class="message-bubble">
-								<text selectable>{{ message.content }}</text>
-							</view>
-						</view>
-					</template>
+  <view class="chat-page">
+    <view class="page-background">
+      <view class="bg-gradient"></view>
+      <view class="bg-glow-left"></view>
+      <view class="bg-glow-right"></view>
+      <view class="bg-noise"></view>
+    </view>
 
-					<!-- 用户消息布局 -->
-					<template v-else-if="message.sender === 'user'">
-						<view class="message-content">
-							<view class="message-bubble" :class="{ 'sending-bubble': message.status === 'pending' }">
-								<text selectable>{{ message.content }}</text>
-							</view>
-							<!-- 消息状态指示器 (仅图标) -->
-							<view v-if="message.status === 'pending'" class="message-status">
-								<uni-icons type="spinner-cycle" size="20" color="#666" class="loading-icon"></uni-icons>
-							</view>
-							<view v-if="message.status === 'error'" class="message-status error-status"
-								@click="retryMessage(message.id)">
-								<uni-icons type="info-filled" size="20" color="#ff0000"></uni-icons>
-							</view>
-						</view>
-						<img class="avatar user-avatar" :src="userInfo.avatarUrl" alt="" srcset="">
-					</template>
-				</view>
+    <NavBar
+      :current-model="selectedModel"
+      :model-list="models"
+      @new-conversation="handleNewConversation"
+      @view-history="handleViewHistory"
+      @open-model-selector="openModelSelector"
+      @open-menu="openFunctionMenu"
+    />
 
-				<!-- AI 正在输入提示 -->
-				<view v-if="aiTyping" class="message-item ai-message typing-indicator">
-					<view class="avatar">AI</view>
-					<view class="message-content">
-						<view class="message-bubble">
-							<text>AI 正在思考中</text>
-							<text class="loading-dots">
-								<text>.</text><text>.</text><text>.</text>
-							</text>
-						</view>
-					</view>
-				</view>
-				<!-- 滚动到底部的占位符，确保最新消息可见 -->
-				<!-- <view class="scroll-bottom-spacer" :id="lastMessageId"></view> -->
-			</scroll-view>
-		</view>
-		<view class="arrow" @click="scrollToBottom">
-			<img class="arrow-icon" src="../../static/arrow_bottom.png" alt="" srcset="">
-		</view>
-		<view class="input-area-wrapper" :style="{ paddingBottom: inputAreaPaddingBottom + 'px' }">
-			<textarea class="input-area" :maxlength="100" v-model="inputText" placeholder="问问ai?" @keyup.enter="sendMessage"
-				rows="3"></textarea>
-			<button @click="sendMessage" :disabled="!inputText.trim() || aiTyping">
-				<div class="svg-wrapper-1">
-					<div class="svg-wrapper">
-						<img class="send-icon" src="../../static/send.png" alt="">
-					</div>
-				</div>
-				<span>发送</span>
-			</button>
-		</view>
-	</view>
+    <view class="chat-body">
+      <view class="session-header">
+        <view class="session-title">
+          <text class="session-name">今日会话</text>
+          <text class="session-date">{{ todayLabel }}</text>
+        </view>
+        <view class="session-badges">
+          <view class="badge">
+            <view class="badge-dot primary"></view>
+            <text>{{ selectedModelName }}</text>
+          </view>
+          <view class="badge">
+            <view class="badge-dot success"></view>
+            <text>{{ messageCount }} 条对话</text>
+          </view>
+        </view>
+      </view>
+
+      <scroll-view
+        class="message-scroll"
+        scroll-y
+        :scroll-with-animation="true"
+        :scroll-into-view="scrollTargetId"
+        enable-back-to-top
+      >
+        <view class="message-feed">
+          <MessageItem
+            v-for="message in messages"
+            :key="message.id"
+            :message="message"
+            @preview-image="handlePreviewImage"
+          />
+
+          <view v-if="isAssistantTyping" class="typing-item" :id="typingAnchorId">
+            <view class="typing-avatar">AI</view>
+            <view class="typing-bubble">
+              <text class="typing-label">正在组织语言</text>
+              <view class="typing-dots">
+                <view class="dot"></view>
+                <view class="dot"></view>
+                <view class="dot"></view>
+              </view>
+            </view>
+          </view>
+
+          <view :id="bottomAnchorId" class="scroll-anchor"></view>
+        </view>
+      </scroll-view>
+
+      <view class="utility-bar">
+        <view class="utility-chip" @click="toggleQuickReplies">
+          <text>{{ quickRepliesVisible ? '收起推荐提问' : '展开推荐提问' }}</text>
+        </view>
+        <view class="utility-metrics">
+          <view class="metric">
+            <text class="metric-label">最近响应</text>
+            <text class="metric-value">{{ lastInteractionLabel }}</text>
+          </view>
+          <view class="metric">
+            <text class="metric-label">会话时长</text>
+            <text class="metric-value">{{ conversationDurationLabel }}</text>
+          </view>
+        </view>
+      </view>
+
+      <QuickReply
+        v-if="quickRepliesVisible && quickReplies.length"
+        :quick-replies="quickReplies"
+        @quick-reply="handleQuickReply"
+      />
+    </view>
+
+    <view class="composer-container">
+      <InputArea
+        v-model="inputValue"
+        :is-recording="isRecording"
+        :recording-duration="recordingDuration"
+        @send-message="handleSendMessage"
+        @upload-image="handleImageUpload"
+        @start-recording="startRecording"
+        @stop-recording="stopRecording"
+        @handle-recording-move="handleRecordingMove"
+      />
+    </view>
+
+    <RecordingIndicator
+      v-if="isRecording"
+      :is-recording="isRecording"
+      :duration="recordingDuration"
+      :is-cancel="recordingCancel"
+      @cancel="cancelRecording"
+    />
+
+    <FunctionMenu
+      :visible="functionMenuVisible"
+      @close="functionMenuVisible = false"
+      @clear-chat="handleClearChat"
+      @show-settings="handleShowSettings"
+      @show-about="handleShowAbout"
+    />
+
+    <CustomToast ref="toastRef" />
+  </view>
 </template>
+
 <script setup lang="ts">
-import {
-	ref,
-	nextTick,
-	computed
-} from 'vue';
-import {
-	onLoad,
-	onShow
-} from '@dcloudio/uni-app';
-import navBar from '@/components/nav-bar.vue';
-import wxConfig from '../../utils/wxConfig';
-// 响应式数据
-const messages = ref([{
-	id: 1, // 消息ID，用于滚动和唯一标识
-	sender: 'ai',
-	content: '您好！我是您的AI聊天助手，有什么可以帮助您的吗？'
-},]);
-const inputText = ref('');
-const aiTyping = ref(false); // AI 是否正在输入
-const messageIdCounter = ref(1); // 用于生成唯一消息ID
-const scrollViewToId = ref(''); // 用于 scroll-into-view 滚动到指定元素
+import { computed, nextTick, ref } from 'vue';
+import { onLoad, onShow, onUnload } from '@dcloudio/uni-app';
+import NavBar from '@/components/nav-bar.vue';
+import MessageItem from '@/components/chat/MessageItem.vue';
+import InputArea from '@/components/chat/InputArea.vue';
+import QuickReply from '@/components/chat/QuickReply.vue';
+import FunctionMenu from '@/components/chat/FunctionMenu.vue';
+import RecordingIndicator from '@/components/chat/RecordingIndicator.vue';
+import CustomToast from '@/components/chat/CustomToast.vue';
 
-// 键盘和底部安全区适配
-const keyboardHeight = ref(0);
-const inputAreaPaddingBottom = ref(20); // 底部输入区域的初始 padding-bottom
-const userInfo = ref(null); // 用户信息
-// 模型相关
-const models = ref([ // 可选择的模型列表
-	{ value: 'model_a', text: '通用模型 A' },
-	{ value: 'model_b', text: '专业模型 B' },
-	{ value: 'model_c', text: '创意模型 C' },
+interface ChatMessage {
+  id: number;
+  role: 'assistant' | 'user';
+  type: 'text' | 'image';
+  content: string;
+  status?: 'pending' | 'success' | 'error';
+  timestamp: number;
+  quoted?: {
+    id: number;
+    role: 'assistant' | 'user';
+    content: string;
+  } | null;
+}
+
+interface ModelOption {
+  value: string;
+  text: string;
+}
+
+type ToastExpose = {
+  showToast: (options: { message: string; type?: 'success' | 'error' | 'warning' | 'info'; duration?: number }) => void;
+  hideToast: () => void;
+  clearTimer: () => void;
+};
+
+const models = ref<ModelOption[]>([
+  { value: 'model_a', text: '通用模型 A' },
+  { value: 'model_b', text: '专业模型 B' },
+  { value: 'model_c', text: '创意模型 C' },
+  { value: 'model_d', text: '效率模型 D' }
 ]);
-const selectedModel = ref('model_a'); // 当前选中的模型
-const modelPopup = ref(null); // uni-popup 组件的引用，用于控制弹窗的打开和关闭
+const selectedModel = ref<string>('model_a');
 
-// 用于“重新生成”功能，存储最后一条用户发送的消息内容和ID
-const lastUserMessageForRegen = ref(null);
+const messageIdSeed = ref<number>(0);
+const bottomAnchorId = 'chat-bottom-anchor';
+const typingAnchorId = 'chat-typing-anchor';
 
-// 计算属性：最后一条消息的ID，用于滚动
-const lastMessageId = computed(() => {
-	// 确保滚动到真正的消息或 AI 正在输入提示，而不是底部占位符
-	const lastActualMessageId = messages.value.length > 0 ? 'msg-' + messages.value[messages.value.length - 1].id : null;
-	return aiTyping.value ? 'msg-' + (messageIdCounter.value + 1) : (lastActualMessageId || 'bottom-spacer');
+const messages = ref<ChatMessage[]>([]);
+const inputValue = ref<string>('');
+const isAssistantTyping = ref<boolean>(false);
+const scrollTargetId = ref<string>('');
+const quickRepliesVisible = ref<boolean>(true);
+const quickReplies = ref<string[]>([
+  '帮我总结一下今天的任务重点，分条列出',
+  '用轻松的语气写一段咖啡新品宣传文案',
+  '为我制定一个一周的健身计划',
+  '请给出一个营销推广的行动清单'
+]);
+
+const functionMenuVisible = ref<boolean>(false);
+const isRecording = ref<boolean>(false);
+const recordingDuration = ref<number>(0);
+const recordingCancel = ref<boolean>(false);
+let recordingTimer: ReturnType<typeof setInterval> | null = null;
+
+const conversationStartedAt = ref<number>(Date.now());
+const lastUserMessage = ref<ChatMessage | null>(null);
+
+const toastRef = ref<ToastExpose | null>(null);
+
+const messageCount = computed(() => messages.value.length);
+const selectedModelName = computed(() => {
+  return models.value.find((m) => m.value === selectedModel.value)?.text ?? '通用模型';
+});
+const todayLabel = computed(() => formatDate(conversationStartedAt.value));
+const lastInteractionLabel = computed(() => {
+  if (!messages.value.length) {
+    return '尚未互动';
+  }
+  return formatRelativeTime(messages.value[messages.value.length - 1].timestamp);
+});
+const conversationDurationLabel = computed(() => {
+  return formatDuration(Date.now() - conversationStartedAt.value);
 });
 
-
-// 滚动到底部函数
-const scrollToBottom = () => {
-	nextTick(() => {
-		scrollViewToId.value = lastMessageId.value;
-		console.log('Scrolling to:', scrollViewToId.value); // 调试信息
-	});
+const initializeConversation = () => {
+  messageIdSeed.value = 0;
+  conversationStartedAt.value = Date.now();
+  messages.value = [createAssistantGreeting()];
+  scrollToBottom();
 };
 
-// 模拟 AI 响应 (实际需要替换为真实 API 调用)
-const simulateAISend = async (userMessageContent, originalUserMessageId) => {
-	aiTyping.value = true; // 显示 AI 正在输入提示
-	const delay = 1500 + Math.random() * 1000; // 模拟网络延迟和处理时间
-	await new Promise(resolve => setTimeout(resolve, delay));
+initializeConversation();
 
-	aiTyping.value = false; // 隐藏 AI 正在输入提示
+function nextMessageId(): number {
+  messageIdSeed.value += 1;
+  return messageIdSeed.value;
+}
 
-	// 找到对应的用户消息并更新状态为 'success'
-	const userMsg = messages.value.find(msg => msg.id === originalUserMessageId && msg.sender === 'user');
-	if (userMsg) {
-		userMsg.status = 'success';
-	}
+function createAssistantGreeting(): ChatMessage {
+  return {
+    id: nextMessageId(),
+    role: 'assistant',
+    type: 'text',
+    content: '你好，我是你的 AI 助手。随时告诉我你的想法，我会帮你整理、发散并给出下一步建议。',
+    status: 'success',
+    timestamp: Date.now(),
+    quoted: null
+  };
+}
 
-	// 模拟 AI 成功回复
-	messages.value.push({
-		id: ++messageIdCounter.value,
-		sender: 'ai',
-		content: `【${models.value.find(m => m.value === selectedModel.value).text}】您问：“${userMessageContent}”。根据当前模型，我的回复是：这是一段模拟的AI回复内容，您可以根据实际API替换。`,
-		evaluation: null // 新增消息评价状态：null, 'liked', 'disliked'
-	});
-	scrollToBottom(); // 滚动到新消息
-};
+function scrollToBottom(targetId?: string) {
+  nextTick(() => {
+    scrollTargetId.value = targetId ?? bottomAnchorId;
+  });
+}
 
-// 发送消息函数
-const sendMessage = async () => {
-	if (!inputText.value.trim() || aiTyping.value) { // 输入为空或AI正在输入时，不允许发送
-		return;
-	}
+function showToast(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') {
+  toastRef.value?.showToast({ message, type, duration: 2200 });
+}
 
-	const userMessageContent = inputText.value;
-	const currentMessageId = ++messageIdCounter.value;
+async function handleSendMessage(rawContent?: string) {
+  const content = (rawContent ?? inputValue.value).trim();
+  if (!content) {
+    showToast('请输入要发送的内容', 'warning');
+    return;
+  }
+  if (isAssistantTyping.value) {
+    showToast('AI 正在回复，请稍候', 'info');
+    return;
+  }
 
-	// 用户发送消息，初始状态为 'pending'
-	messages.value.push({
-		id: currentMessageId,
-		sender: 'user',
-		content: userMessageContent,
-		status: 'pending' // 新增消息状态：pending, success, error
-	});
-	inputText.value = ''; // 清空输入框
-	scrollToBottom(); // 滚动到底部
+  const userMessage: ChatMessage = {
+    id: nextMessageId(),
+    role: 'user',
+    type: 'text',
+    content,
+    status: 'pending',
+    timestamp: Date.now(),
+    quoted: null
+  };
 
-	// 存储最后一条用户消息，用于重新生成功能
-	lastUserMessageForRegen.value = { id: currentMessageId, content: userMessageContent };
+  messages.value.push(userMessage);
+  lastUserMessage.value = userMessage;
+  inputValue.value = '';
+  scrollToBottom(`message-${userMessage.id}`);
 
-	try {
-		// 模拟后端请求，这里需要替换为真实的 AI API 调用
-		await simulateAISend(userMessageContent, currentMessageId);
-	} catch (error) {
-		console.error('AI Reply Error:', error);
-		// 如果发生错误，更新用户消息状态为 'error'
-		const userMsg = messages.value.find(msg => msg.id === currentMessageId && msg.sender === 'user');
-		if (userMsg) {
-			userMsg.status = 'error';
-		}
-		// 也可以添加一条 AI 错误提示消息
-		messages.value.push({
-			id: ++messageIdCounter.value,
-			sender: 'ai',
-			content: '抱歉，AI服务暂时不可用，请稍后再试。'
-		});
-	} finally {
-		scrollToBottom(); // 确保无论成功失败都滚动到底部
-	}
-};
+  await simulateAssistantReply(userMessage, content);
+}
 
-// 重试发送消息
-const retryMessage = (messageId) => {
-	const messageToRetry = messages.value.find(msg => msg.id === messageId && msg.sender === 'user');
-	if (messageToRetry && messageToRetry.status === 'error') {
-		messageToRetry.status = 'pending'; // 重新设置为 pending 状态
-		simulateAISend(messageToRetry.content, messageId); // 再次尝试发送
-	}
-};
+async function simulateAssistantReply(userMessage: ChatMessage, originalText: string) {
+  isAssistantTyping.value = true;
+  const delay = 900 + Math.random() * 900;
 
-// --- 功能方法 ---
+  try {
+    await new Promise((resolve) => setTimeout(resolve, delay));
 
-// 新建会话
-const newConversation = () => {
-	uni.showModal({
-		title: '新建会话',
-		content: '确定要开始一个新的会话吗？当前会话将被清空。',
-		success: (res) => {
-			if (res.confirm) {
-				messages.value = [{
-					id: ++messageIdCounter.value,
-					sender: 'ai',
-					content: '您好！欢迎开始新的AI聊天会话，有什么可以帮助您的吗？'
-				}];
-				inputText.value = '';
-				lastUserMessageForRegen.value = null; // 清空重新生成记录
-				aiTyping.value = false;
-				scrollToBottom();
-				uni.showToast({ title: '新会话已创建', icon: 'none' });
-			}
-		}
-	});
-};
+    const shouldFail = Math.random() < 0.04;
+    if (shouldFail) {
+      userMessage.status = 'error';
+      showToast('网络有些拥堵，稍后再试一次', 'error');
+      return;
+    }
 
-// 查看历史记录 (目前仅为占位符提示)
-const viewHistory = () => {
-	uni.showToast({
-		title: '历史记录功能正在开发中...',
-		icon: 'none'
-	});
-	// 实际应用中，这里会导航到历史记录页面或打开一个历史记录列表弹窗
-	// uni.navigateTo({ url: '/pages/history/history' });
-};
+    userMessage.status = 'success';
 
-// 点赞消息
-const likeMessage = (messageId) => {
-	const msg = messages.value.find(m => m.id === messageId);
-	if (msg && msg.sender === 'ai') {
-		if (msg.evaluation === 'liked') {
-			msg.evaluation = null; // 取消点赞
-			uni.showToast({ title: '已取消点赞', icon: 'none' });
-		} else {
-			msg.evaluation = 'liked'; // 点赞
-			msg.evaluation = msg.evaluation === 'disliked' ? null : 'liked'; // 如果之前是差评，先取消差评
-			uni.showToast({ title: '点赞成功', icon: 'none' });
-		}
-	}
-};
+    const assistantMessage: ChatMessage = {
+      id: nextMessageId(),
+      role: 'assistant',
+      type: 'text',
+      content: generateAssistantReply(originalText),
+      status: 'success',
+      timestamp: Date.now(),
+      quoted: {
+        id: userMessage.id,
+        role: 'user',
+        content: originalText
+      }
+    };
 
-// 差评消息
-const dislikeMessage = (messageId) => {
-	const msg = messages.value.find(m => m.id === messageId);
-	if (msg && msg.sender === 'ai') {
-		if (msg.evaluation === 'disliked') {
-			msg.evaluation = null; // 取消差评
-			uni.showToast({ title: '已取消差评', icon: 'none' });
-		} else {
-			msg.evaluation = 'disliked'; // 差评
-			msg.evaluation = msg.evaluation === 'liked' ? null : 'disliked'; // 如果之前是点赞，先取消点赞
-			uni.showToast({ title: '已标记为差评', icon: 'none' });
-		}
-	}
-};
+    messages.value.push(assistantMessage);
+    scrollToBottom(`message-${assistantMessage.id}`);
+  } finally {
+    isAssistantTyping.value = false;
+  }
+}
 
-// 重新生成回复
-const regenerateMessage = async (messageId) => {
-	// 确保是AI消息且有上一个用户消息可以重新生成
-	const msg = messages.value.find(m => m.id === messageId);
-	if (msg && msg.sender === 'ai' && lastUserMessageForRegen.value && !aiTyping.value) {
-		uni.showModal({
-			title: '重新生成',
-			content: '确定要重新生成这条AI回复吗？',
-			success: async (res) => {
-				if (res.confirm) {
-					// 移除当前AI消息 (如果它是最新的一条)
-					if (messages.value[messages.value.length - 1].id === messageId) {
-						messages.value.pop();
-					} else {
-						// 如果不是最新一条，需要找到并删除，这会更复杂
-						messages.value = messages.value.filter(m => m.id !== messageId);
-					}
+function generateAssistantReply(question: string): string {
+  return `【${selectedModelName.value}】
 
-					// 找到对应的用户消息并将其状态重置为 pending
-					const userMsgToResend = messages.value.find(m => m.id === lastUserMessageForRegen.value.id && m.sender === 'user');
-					if (userMsgToResend) {
-						userMsgToResend.status = 'pending';
-					}
+我理解到你正在关注：「${question}」。
 
-					scrollToBottom(); // 滚动确保输入框可见
+以下是我为你整理的关键建议：
+1. 明确目标与限制条件，确保执行路径清晰；
+2. 列出需要的信息输入与产出格式，方便快速迭代；
+3. 将工作拆分为 3 个以内的阶段，每个阶段都留下复盘空间；
 
-					try {
-						await simulateAISend(lastUserMessageForRegen.value.content, lastUserMessageForRegen.value.id);
-						uni.showToast({ title: '已重新生成', icon: 'success' });
-					} catch (error) {
-						console.error('Regenerate Error:', error);
-						uni.showToast({ title: '重新生成失败', icon: 'error' });
-						// 失败时可以考虑添加一条AI错误消息
-						messages.value.push({
-							id: ++messageIdCounter.value,
-							sender: 'ai',
-							content: '抱歉，重新生成失败。'
-						});
-					} finally {
-						scrollToBottom();
-					}
-				}
-			}
-		});
-	} else {
-		uni.showToast({ title: '当前无法重新生成', icon: 'none' });
-	}
-};
+如需我继续展开某个环节，直接告诉我即可。`;
+}
 
-// 分享消息
-const shareMessage = (messageId) => {
-	const msg = messages.value.find(m => m.id === messageId);
-	if (msg && msg.sender === 'ai') {
-		uni.share({
-			provider: "weixin", // 微信小程序支持的分享
-			type: 0, // 0: 文本，1: 图片，2: 网页
-			title: "AI 聊天分享",
-			scene: "WXSceneSession", // WXSceneSession: 好友会话, WXSceneTimeline: 朋友圈
-			summary: msg.content.substring(0, 80) + "...", // 摘要内容
-			success: (res) => {
-				console.log("分享成功:" + JSON.stringify(res));
-				uni.showToast({ title: '分享成功', icon: 'success' });
-			},
-			fail: (err) => {
-				console.log("分享失败:" + JSON.stringify(err));
-				uni.showToast({ title: '分享失败', icon: 'none' });
-			}
-		});
-	}
-};
+function handleQuickReply(reply: string) {
+  handleSendMessage(reply);
+}
 
+function toggleQuickReplies() {
+  quickRepliesVisible.value = !quickRepliesVisible.value;
+}
 
-// 模型选择相关方法
-const openModelSelector = () => {
-	modelPopup.value.open('bottom'); // 打开底部弹窗
-};
+function handleImageUpload(filePath: string) {
+  const imageMessage: ChatMessage = {
+    id: nextMessageId(),
+    role: 'user',
+    type: 'image',
+    content: filePath,
+    status: 'success',
+    timestamp: Date.now(),
+    quoted: null
+  };
 
-const closeModelSelector = () => {
-	modelPopup.value.close(); // 关闭底部弹窗
-};
+  messages.value.push(imageMessage);
+  scrollToBottom(`message-${imageMessage.id}`);
+  showToast('已收到图片，目前仅支持保存，解析功能即将上线', 'info');
+}
 
-const handleModelChange = () => {
-	// 模型切换后的操作，例如重新加载聊天记录或提示用户
-	uni.showToast({
-		title: `模型已切换至：${models.value.find(m => m.value === selectedModel.value).text}`,
-		icon: 'none',
-		duration: 2000
-	});
-	// 可以在这里清空聊天记录或根据新模型重新获取数据
-	// messages.value = [];
-	// messages.value.push({ id: ++messageIdCounter.value, sender: 'ai', content: `模型已切换为 ${selectedModel.value}，请开始您的对话。` });
-	// scrollToBottom();
-	closeModelSelector(); // 选择后自动关闭弹窗
-};
+function handlePreviewImage(imageUrl: string) {
+  uni.previewImage({
+    urls: [imageUrl],
+    current: imageUrl
+  });
+}
 
+function handleNewConversation() {
+  uni.showModal({
+    title: '新的灵感会话',
+    content: '确认开始新的会话？当前聊天记录将被清空。',
+    confirmText: '开始新会话',
+    cancelText: '保留',
+    success: (res) => {
+      if (res.confirm) {
+        initializeConversation();
+        quickRepliesVisible.value = true;
+        showToast('新的对话已准备好', 'success');
+      }
+    }
+  });
+}
 
-// uni-app 生命周期钩子
+function handleViewHistory() {
+  showToast('历史记录面板正在设计中，敬请期待', 'info');
+}
+
+function openModelSelector() {
+  const itemList = models.value.map((item) => item.text);
+  uni.showActionSheet({
+    itemList,
+    success: (result) => {
+      const index = result.tapIndex;
+      if (typeof index === 'number' && models.value[index]) {
+        selectedModel.value = models.value[index].value;
+        showToast(`模型已切换至 ${models.value[index].text}`, 'success');
+      }
+    }
+  });
+}
+
+function openFunctionMenu() {
+  functionMenuVisible.value = true;
+}
+
+function handleClearChat() {
+  functionMenuVisible.value = false;
+  initializeConversation();
+  showToast('聊天记录已清空', 'success');
+}
+
+function handleShowSettings() {
+  showToast('设置中心即将上线', 'info');
+}
+
+function handleShowAbout() {
+  functionMenuVisible.value = false;
+  uni.showModal({
+    title: '关于智元 AI 助手',
+    content: '这是一个面向效率与灵感的智能助手，支持文本、图片与语音多模态交互。我们正在持续打磨体验，让你的每次提问都更丝滑。',
+    showCancel: false,
+    confirmText: '知道了'
+  });
+}
+
+function startRecording() {
+  if (isRecording.value) return;
+  isRecording.value = true;
+  recordingDuration.value = 0;
+  recordingCancel.value = false;
+  recordingTimer = setInterval(() => {
+    recordingDuration.value += 1;
+  }, 1000);
+}
+
+function stopRecording() {
+  if (!isRecording.value) return;
+  if (recordingTimer) {
+    clearInterval(recordingTimer);
+    recordingTimer = null;
+  }
+  const cancelled = recordingCancel.value;
+  isRecording.value = false;
+  recordingDuration.value = 0;
+  recordingCancel.value = false;
+  showToast(cancelled ? '录音已取消' : '语音输入功能即将上线', cancelled ? 'warning' : 'info');
+}
+
+function cancelRecording() {
+  recordingCancel.value = true;
+  stopRecording();
+}
+
+function handleRecordingMove(event: any) {
+  if (!isRecording.value) return;
+  const touch = event?.touches?.[0] ?? event?.changedTouches?.[0];
+  if (touch && typeof touch.clientY === 'number') {
+    recordingCancel.value = touch.clientY < 120;
+  }
+}
+
+function formatDate(timestamp: number): string {
+  const date = new Date(timestamp);
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  return `${month}月${day}日 · ${weekdays[date.getDay()]}`;
+}
+
+function formatRelativeTime(timestamp: number): string {
+  const diff = Date.now() - timestamp;
+  if (diff < 60_000) {
+    return '刚刚';
+  }
+  if (diff < 3_600_000) {
+    return `${Math.floor(diff / 60_000)} 分钟前`;
+  }
+  if (diff < 86_400_000) {
+    return `${Math.floor(diff / 3_600_000)} 小时前`;
+  }
+  const date = new Date(timestamp);
+  return `${date.getMonth() + 1}月${date.getDate()}日`;
+}
+
+function formatDuration(duration: number): string {
+  const minutes = Math.floor(duration / 60_000);
+  const seconds = Math.floor((duration % 60_000) / 1000);
+  if (minutes === 0) {
+    return `${seconds} 秒`;
+  }
+  return `${minutes} 分 ${seconds} 秒`;
+}
+
 onLoad(() => {
-	// 监听键盘高度变化，以适配输入区域位置
-	uni.onKeyboardHeightChange(res => {
-		keyboardHeight.value = res.height;
-		const safeAreaBottom = uni.getSystemInfoSync().safeAreaInsets.bottom;
-		// 动态计算底部输入区域的 padding，确保在键盘上方且考虑安全区
-		inputAreaPaddingBottom.value = keyboardHeight.value > 0 ? (keyboardHeight.value + safeAreaBottom) : 20;
-		// fabBottom.value = keyboardHeight.value > 0 ? (keyboardHeight.value + safeAreaBottom + 20) : 30; // 悬浮球已移除，此行不再需要
-		scrollToBottom();
-	});
-	console.log('UniApp 页面加载');
-	wxConfig.getUserInfo({
-		success: (res) => {
-			console.log('获取用户信息成功', res);
-			userInfo.value = res.userInfo;
-			// 这里可以根据用户信息更新 UI 显示
-		},
-		fail: (err) => {
-			console.log('获取用户信息失败', err);
-			// 这里可以弹窗提示用户授权失败
-		}
-	})
-	// 页面加载时确保滚动到底部
-	scrollToBottom();
+  scrollToBottom();
 });
 
 onShow(() => {
-	// 页面显示时确保滚动到底部 (例如从其他页面返回)
-	scrollToBottom();
+  scrollToBottom();
+});
+
+onUnload(() => {
+  if (recordingTimer) {
+    clearInterval(recordingTimer);
+    recordingTimer = null;
+  }
 });
 </script>
 
 <style scoped lang="scss">
-.container {
-	display: flex;
-	flex-direction: column;
+.chat-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
 }
 
-.nav-right-icons {
-	display: flex;
-	align-items: center;
-	height: 100%;
+.page-background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
 }
 
-.nav-icon {
-	padding: 0 15rpx;
-	/* 调整图标间距 */
-	display: flex;
-	align-items: center;
-	height: 100%;
+.bg-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #f4f7ff 0%, #f9fbff 35%, #ffffff 100%);
 }
 
-.message-list-wrapper {
-	margin-top: 84px;
-	height: calc(100vh - 255px);
-	flex-grow: 1;
-	// background-image: linear-gradient(-225deg, #E3FDF5 0%, #FFE6FA 100%);
-	// background-color: #FFE6FA;
-	overflow-y: auto;
-
-	.message-list {
-		flex: 1;
-		padding: 20px;
-		box-sizing: border-box;
-		padding-bottom: calc(140rpx + env(safe-area-inset-bottom));
-		scroll-behavior: smooth;
-		-webkit-overflow-scrolling: touch;
-	}
+.bg-glow-left {
+  position: absolute;
+  top: -120rpx;
+  left: -80rpx;
+  width: 360rpx;
+  height: 360rpx;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.22) 0%, rgba(129, 140, 248, 0) 70%);
 }
 
-
-// .scroll-bottom-spacer {
-// 	height: 20px;
-// }
-
-.message-item {
-	display: flex;
-	margin-bottom: 30px;
-	align-items: flex-start;
-	/* 顶部对齐 */
-	opacity: 0;
-	transform: translateY(20px);
-	animation: fadeInSlideUp 0.3s ease-out forwards;
-	/* 消息进入动画 */
+.bg-glow-right {
+  position: absolute;
+  bottom: 120rpx;
+  right: -120rpx;
+  width: 380rpx;
+  height: 380rpx;
+  background: radial-gradient(circle, rgba(236, 72, 153, 0.18) 0%, rgba(236, 72, 153, 0) 70%);
 }
 
-/* 消息进入动画 */
-@keyframes fadeInSlideUp {
-	from {
-		opacity: 0;
-		transform: translateY(20px);
-	}
-
-	to {
-		opacity: 1;
-		transform: translateY(0);
-	}
+.bg-noise {
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  background-image: linear-gradient(90deg, rgba(99, 102, 241, 0.12) 1px, transparent 0), linear-gradient(rgba(129, 140, 248, 0.12) 1px, transparent 0);
+  background-size: 24rpx 24rpx;
+  mix-blend-mode: soft-light;
 }
 
-
-/* 头像样式 */
-.avatar {
-	width: 70rpx;
-	height: 70rpx;
-	border-radius: 50%;
-	background-image: linear-gradient(144deg, #af40ff, #5b42f3 50%, #00ddeb);
-	/* AI头像背景色 - 更鲜明的绿 */
-	color: #FFFFFF;
-	font-size: 28rpx;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	flex-shrink: 0;
-	/* 防止头像被压缩 */
-	margin-right: 20rpx;
-	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-	/* 头像阴影 */
+.chat-body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 28rpx 24rpx 20rpx;
+  gap: 28rpx;
+  box-sizing: border-box;
 }
 
-.user-avatar {
-	background-color: #81C784;
-	/* 用户头像背景色 - 稍浅的主题绿 */
-	margin-left: 20rpx;
-	margin-right: 0;
+.session-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(236, 240, 255, 0.92));
+  border-radius: 32rpx;
+  padding: 28rpx 30rpx;
+  box-shadow: 0 18rpx 38rpx rgba(99, 102, 241, 0.12);
+  border: 1rpx solid rgba(129, 140, 248, 0.12);
 }
 
-/* 消息内容和气泡 */
-.message-content {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	/* 默认左对齐 */
-	flex: 1;
-	/* 占据剩余空间 */
+.session-title {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
 }
 
-.user-message .message-content {
-	align-items: flex-end;
-	/* 用户消息内容靠右对齐 */
+.session-name {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #2d3866;
+  letter-spacing: 2.2rpx;
 }
 
-.message-bubble {
-	max-width: 100%;
-	/* 确保在 flex 容器内不会溢出 */
-	padding: 20rpx 25rpx;
-	border-radius: 20rpx;
-	font-size: 32rpx;
-	line-height: 1.5;
-	word-break: break-all;
-	/* 单词内换行 */
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-	/* 气泡阴影 */
-	position: relative;
-	overflow: hidden;
-	/* 确保伪元素不会溢出 */
+.session-date {
+  font-size: 24rpx;
+  color: rgba(45, 56, 102, 0.55);
+  letter-spacing: 1rpx;
 }
 
-/* 气泡三角形 (伪元素) */
-.ai-message .message-bubble::before,
-.user-message .message-bubble::before {
-	content: '';
-	position: absolute;
-	width: 0;
-	height: 0;
-	border-style: solid;
-	top: 15rpx;
-	z-index: 1;
-	/* 确保三角形在气泡之上 */
+.session-badges {
+  display: flex;
+  gap: 14rpx;
 }
 
-.ai-message .message-bubble {
-	background-color: #FFFFFF;
-	color: #333333;
-	border-top-left-radius: 5rpx;
-	/* AI气泡左上角尖角 */
-	border-bottom-right-radius: 5rpx;
-	/* AI气泡右下角也圆润一些 */
+.badge {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 12rpx 20rpx;
+  border-radius: 999rpx;
+  background: rgba(99, 102, 241, 0.08);
+  color: #3c4372;
+  font-size: 24rpx;
+  font-weight: 600;
+  letter-spacing: 0.6rpx;
 }
 
-.ai-message .message-bubble::before {
-	border-width: 0 20rpx 20rpx 0;
-	border-color: transparent #FFFFFF transparent transparent;
-	left: -15rpx;
+.badge-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+
+  &.primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  }
+
+  &.success {
+    background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  }
 }
 
-.user-message {
-	justify-content: flex-end;
-	/* 用户消息靠右 */
+.message-scroll {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 36rpx;
+  padding: 32rpx 26rpx;
+  box-shadow: 0 26rpx 48rpx rgba(79, 70, 229, 0.12);
+  border: 1rpx solid rgba(129, 140, 248, 0.1);
+  box-sizing: border-box;
 }
 
-.user-message .message-bubble {
-	background-color: #C8E6C9;
-	/* 用户消息气泡浅绿色背景 */
-	color: #333333;
-	border-top-right-radius: 5rpx;
-	/* 用户气泡右上角尖角 */
-	border-bottom-left-radius: 5rpx;
-	/* 用户气泡左下角也圆润一些 */
+.message-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 28rpx;
 }
 
-.user-message .message-bubble::before {
-	border-width: 0 0 20rpx 20rpx;
-	border-color: transparent transparent transparent #C8E6C9;
-	right: -15rpx;
+.typing-item {
+  display: flex;
+  align-items: flex-end;
+  gap: 18rpx;
+  padding: 6rpx 12rpx;
 }
 
-
-/* 消息状态 (发送中/失败) */
-.message-status {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	/* 图标居中，如果只有一个图标 */
-	font-size: 24rpx;
-	color: #666;
-	margin-top: 10rpx;
-	height: 40rpx;
-	/* 给图标留出固定高度，避免跳动 */
-	width: 40rpx;
-	/* 确保图标区域稳定 */
+.typing-avatar {
+  width: 70rpx;
+  height: 70rpx;
+  border-radius: 22rpx;
+  background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  font-weight: 600;
+  box-shadow: 0 16rpx 28rpx rgba(99, 102, 241, 0.24);
 }
 
-/* 用户消息状态靠右 */
-.user-message .message-status {
-	align-self: flex-end;
-	/* 自身靠右对齐 */
-	margin-right: 10rpx;
-	/* 与气泡的间距 */
+.typing-bubble {
+  padding: 22rpx 28rpx;
+  border-radius: 28rpx;
+  background: linear-gradient(135deg, rgba(129, 140, 248, 0.16), rgba(236, 233, 255, 0.18));
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  color: #4b4f7a;
+  font-size: 26rpx;
+  letter-spacing: 0.8rpx;
+  box-shadow: 0 20rpx 36rpx rgba(129, 140, 248, 0.16);
 }
 
-.loading-icon {
-	animation: spin 1s linear infinite;
-	/* 旋转动画 */
+.typing-dots {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
 }
 
-.sending-bubble {
-	opacity: 0.8;
-	/* 正在发送的消息气泡略微透明 */
+.typing-dots .dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.82);
+  animation: typing 1.4s infinite ease-in-out;
 }
 
-.error-status {
-	color: #ff0000;
-	/* 错误状态文字颜色 */
-	padding: 5rpx 10rpx;
-	/* 稍微增加点击区域 */
-	border-radius: 10rpx;
-	background-color: rgba(255, 0, 0, 0.05);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	cursor: pointer;
+.typing-dots .dot:nth-child(2) {
+  animation-delay: 0.18s;
 }
 
-/* AI 正在输入提示 */
-.typing-indicator .message-bubble {
-	background-color: #EEEEEE;
-	color: #666;
-	font-style: italic;
-	animation: pulse 1.5s infinite;
+.typing-dots .dot:nth-child(3) {
+  animation-delay: 0.36s;
 }
 
-.loading-dots text {
-	animation: dot-pulse 1.5s infinite;
-	opacity: 0.5;
+.scroll-anchor {
+  height: 12rpx;
 }
 
-.loading-dots text:nth-child(1) {
-	animation-delay: 0s;
+.utility-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 26rpx;
+  border-radius: 26rpx;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1rpx solid rgba(129, 140, 248, 0.12);
+  box-shadow: 0 18rpx 28rpx rgba(99, 102, 241, 0.12);
 }
 
-.loading-dots text:nth-child(2) {
-	animation-delay: 0.2s;
+.utility-chip {
+  padding: 16rpx 32rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, rgba(129, 140, 248, 0.16), rgba(236, 233, 255, 0.12));
+  color: #3d4575;
+  font-size: 26rpx;
+  font-weight: 600;
+  letter-spacing: 0.6rpx;
 }
 
-.loading-dots text:nth-child(3) {
-	animation-delay: 0.4s;
+.utility-metrics {
+  display: flex;
+  gap: 24rpx;
 }
 
-/* 动画关键帧 */
-@keyframes spin {
-	0% {
-		transform: rotate(0deg);
-	}
-
-	100% {
-		transform: rotate(360deg);
-	}
+.metric {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6rpx;
 }
 
-@keyframes pulse {
-
-	0%,
-	100% {
-		opacity: 0.8;
-	}
-
-	50% {
-		opacity: 1;
-	}
+.metric-label {
+  font-size: 22rpx;
+  color: rgba(61, 69, 117, 0.6);
+  letter-spacing: 0.6rpx;
 }
 
-@keyframes dot-pulse {
-
-	0%,
-	100% {
-		opacity: 0.5;
-	}
-
-	50% {
-		opacity: 1;
-	}
+.metric-value {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #2e3968;
 }
 
-/* AI 消息操作按钮 - 仅图标 */
-.message-actions {
-	display: flex;
-	margin-top: 10rpx;
-	gap: 10rpx;
-	/* 按钮之间的间距缩小，因为没有文字了 */
-	justify-content: flex-start;
-	/* AI 消息操作按钮靠左 */
-	align-items: center;
-	font-size: 24rpx;
-}
-.arrow {
-	margin: 0 auto;
-    .arrow-icon{
-		width: 25px;
-		height: 25px;
-	}
-}
-.input-area-wrapper {
-	display: flex;
-	align-items: center;
-	// background-image: linear-gradient(to bottom, #E3FDF5, #FFFFFF);
-	height: 100px;
-
-	// background-image: linear-gradient(90deg, #03a9f4, #f441a5)
-	.input-area {
-		position: fixed;
-		height: 100px;
-		bottom: 30px;
-		width: 90%;
-		left: 5%;
-		padding: 15px;
-		box-sizing: border-box;
-		transition: padding-bottom 0.3s ease-out;
-		border: 1px solid #E0E0E0;
-		border-radius: 12px;
-	}
-	button {
-		position: fixed;
-		bottom: 35px;
-		right: 25px;
-		font-family: inherit;
-		font-size: 16px;
-		background: royalblue;
-		color: white;
-		padding-left: 0.9em;
-		display: flex;
-		align-items: center;
-		border: none;
-		border-radius: 16px;
-		overflow: hidden;
-		transition: all 0.2s;
-		cursor: pointer;
-		.send-icon{
-			width: 18px;
-			height: 16px;
-			margin-right: 0.4em;
-		}
-	}
-}
-.popup-content {
-	padding: 40rpx;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	border-top-left-radius: 20rpx;
-	border-top-right-radius: 20rpx;
+.composer-container {
+  position: sticky;
+  bottom: 0;
+  padding: 0 24rpx 32rpx;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(236, 240, 255, 0.8) 45%, rgba(255, 255, 255, 0.95) 100%);
+  backdrop-filter: blur(16rpx);
+  -webkit-backdrop-filter: blur(16rpx);
+  z-index: 2;
 }
 
-/* .popup-title 样式已不需要 */
-.model-select {
-	width: 100%;
-	margin-bottom: 40rpx;
-}
-
-.close-button {
-	width: 80%;
-	background-color: #4CAF50;
-	color: #FFFFFF;
-	border-radius: 40rpx;
-	height: 80rpx;
-	line-height: 80rpx;
-	font-size: 32rpx;
+@keyframes typing {
+  0%, 80%, 100% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>
