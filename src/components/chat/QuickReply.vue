@@ -37,19 +37,19 @@ function handleQuickReply(reply) {
 <style lang="scss" scoped>
 .quick-reply-section {
   padding: 28rpx 32rpx;
-  background: rgba(255, 255, 255, 0.95);
-  border-top: 1rpx solid rgba(129, 140, 248, 0.12);
+  background: var(--color-bg-card);
+  border-top: 1rpx solid var(--color-border-subtle);
   box-shadow: 0 -16rpx 32rpx rgba(99, 102, 241, 0.12);
   border-top-left-radius: 32rpx;
   border-top-right-radius: 32rpx;
   animation: slideUp 0.28s ease-out;
-  backdrop-filter: blur(12rpx);
-  -webkit-backdrop-filter: blur(12rpx);
+  backdrop-filter: blur(var(--blur-card));
+  -webkit-backdrop-filter: blur(var(--blur-card));
 
   .quick-reply-title {
     font-size: 24rpx;
     font-weight: 600;
-    color: rgba(47, 58, 102, 0.65);
+    color: var(--color-text-secondary);
     margin-bottom: 16rpx;
     letter-spacing: 0.8rpx;
   }
@@ -66,7 +66,7 @@ function handleQuickReply(reply) {
     border: 1rpx solid rgba(129, 140, 248, 0.2);
     border-radius: 28rpx;
     font-size: 26rpx;
-    color: #3a4272;
+    color: var(--color-text-primary);
     cursor: pointer;
     transition: transform 0.26s ease, box-shadow 0.26s ease, background 0.26s ease, color 0.26s ease;
     white-space: nowrap;
@@ -83,7 +83,7 @@ function handleQuickReply(reply) {
       background: linear-gradient(135deg, rgba(99, 102, 241, 0.22), rgba(129, 140, 248, 0.18));
       box-shadow: 0 10rpx 16rpx rgba(99, 102, 241, 0.18);
       border-color: rgba(99, 102, 241, 0.32);
-      color: #273063;
+      color: var(--color-text-secondary);
     }
 
     .quick-reply-text {
@@ -102,6 +102,12 @@ function handleQuickReply(reply) {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (max-width: 720rpx) {
+  .quick-reply-section {
+    padding: 24rpx 20rpx;
   }
 }
 </style>

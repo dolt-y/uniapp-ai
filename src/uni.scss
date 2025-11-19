@@ -106,3 +106,43 @@ $uni-color-subtitle: #555; // 二级标题颜色
 $uni-font-size-subtitle: 18px;
 $uni-color-paragraph: #3f536e; // 文章段落颜色
 $uni-font-size-paragraph: 15px;
+
+:root {
+  --color-bg-primary: #f5f7ff;
+  --color-bg-card: rgba(255, 255, 255, 0.95);
+  --color-bg-soft: rgba(244, 246, 255, 0.92);
+  --color-bg-elevated: rgba(255, 255, 255, 0.98);
+  --color-border-subtle: rgba(218, 227, 255, 0.7);
+  --color-border-soft: rgba(197, 210, 255, 0.6);
+  --color-text-primary: #273156;
+  --color-text-secondary: rgba(39, 49, 86, 0.6);
+  --color-text-inverse: #ffffff;
+  --color-accent: #6366f1;
+  --color-accent-strong: #8b5cf6;
+  --color-accent-contrast: #ec4899;
+  --color-overlay: rgba(15, 23, 42, 0.45);
+  --shadow-soft: 0 12rpx 26rpx rgba(84, 97, 178, 0.12);
+  --shadow-strong: 0 18rpx 32rpx rgba(99, 102, 241, 0.2);
+  --blur-card: 12rpx;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg-primary: #0f172a;
+    --color-bg-card: rgba(30, 41, 59, 0.88);
+    --color-bg-soft: rgba(37, 46, 68, 0.82);
+    --color-bg-elevated: rgba(30, 41, 59, 0.92);
+    --color-border-subtle: rgba(99, 102, 241, 0.28);
+    --color-border-soft: rgba(148, 163, 184, 0.35);
+    --color-text-primary: #e2e8f0;
+    --color-text-secondary: rgba(226, 232, 240, 0.65);
+    --color-text-inverse: #0f172a;
+    --color-accent: #818cf8;
+    --color-accent-strong: #a855f7;
+    --color-accent-contrast: #f472b6;
+    --color-overlay: rgba(15, 23, 42, 0.75);
+    --shadow-soft: 0 14rpx 26rpx rgba(15, 23, 42, 0.38);
+    --shadow-strong: 0 24rpx 36rpx rgba(14, 20, 35, 0.48);
+    --blur-card: 16rpx;
+  }
+}

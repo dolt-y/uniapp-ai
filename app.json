@@ -9,19 +9,6 @@
     "navigationBarTitleText": "AI助手",
     "navigationBarTextStyle": "white"
   },
-  "tabBar": {
-    "color": "#666666",
-    "selectedColor": "#07C160",
-    "backgroundColor": "#ffffff",
-    "list": [
-      {
-        "pagePath": "pages/new/index",
-        "text": "聊天",
-        "iconPath": "static/logo.png",
-        "selectedIconPath": "static/logo.png"
-      }
-    ]
-  },
-  "usingComponents": true,
+  "usingComponents": {},
   "requiredPrivateInfos": []
 }

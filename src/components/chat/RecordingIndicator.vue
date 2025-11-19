@@ -57,7 +57,7 @@ function handleCancel() {
 .recording-indicator {
   position: fixed;
   inset: 0;
-  background: rgba(30, 41, 59, 0.62);
+  background: var(--color-overlay);
   z-index: 9998;
   display: flex;
   align-items: center;
@@ -78,11 +78,11 @@ function handleCancel() {
     align-items: center;
     padding: 36rpx 40rpx;
     border-radius: 32rpx;
-    background: linear-gradient(150deg, rgba(255, 255, 255, 0.94), rgba(236, 243, 255, 0.96));
-    box-shadow: 0 32rpx 68rpx rgba(15, 23, 42, 0.28);
+    background: var(--color-bg-card);
+    box-shadow: var(--shadow-strong);
     animation: scaleIn 0.26s ease-out;
     min-width: 560rpx;
-    border: 2rpx solid rgba(129, 140, 248, 0.25);
+    border: 2rpx solid var(--color-border-subtle);
     gap: 24rpx;
   }
 
@@ -131,7 +131,7 @@ function handleCancel() {
   .recording-title {
     font-size: 30rpx;
     font-weight: 700;
-    color: #1f2a4f;
+    color: var(--color-text-primary);
     letter-spacing: 0.8rpx;
   }
 

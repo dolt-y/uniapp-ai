@@ -1,53 +1,50 @@
 <template>
   <view class="chat-page">
-    <view class="page-background">
+    <!-- <view class="page-background">
       <view class="bg-gradient"></view>
       <view class="bg-glow-left"></view>
       <view class="bg-glow-right"></view>
       <view class="bg-noise"></view>
-    </view>
+    </view> -->
 
-    <NavBar
-      :current-model="selectedModel"
-      :model-list="models"
-      @new-conversation="handleNewConversation"
-      @view-history="handleViewHistory"
-      @open-model-selector="openModelSelector"
-      @open-menu="openFunctionMenu"
-    />
+    <NavBar :current-model="selectedModel" :model-list="models" @new-conversation="handleNewConversation"
+      @view-history="handleViewHistory" @open-model-selector="openModelSelector" @open-menu="openFunctionMenu" />
 
     <view class="chat-body">
-      <view class="session-header">
+      <!-- <view class="session-header">
         <view class="session-title">
           <text class="session-name">今日会话</text>
           <text class="session-date">{{ todayLabel }}</text>
-        </view>
+							</view>
         <view class="session-badges">
           <view class="badge">
             <view class="badge-dot primary"></view>
             <text>{{ selectedModelName }}</text>
-          </view>
+							</view>
           <view class="badge">
             <view class="badge-dot success"></view>
             <text>{{ messageCount }} 条对话</text>
-          </view>
-        </view>
-      </view>
-
-      <scroll-view
-        class="message-scroll"
-        scroll-y
-        :scroll-with-animation="true"
-        :scroll-into-view="scrollTargetId"
-        enable-back-to-top
-      >
+							</view>
+						</view>
+				</view> -->
+      <button open-type="getUserProfile" @tap="handleLogin">登录</button>
+      <scroll-view class="message-scroll" scroll-y :scroll-with-animation="true" :scroll-into-view="scrollTargetId"
+        enable-back-to-top>
         <view class="message-feed">
-          <MessageItem
-            v-for="message in messages"
-            :key="message.id"
-            :message="message"
-            @preview-image="handlePreviewImage"
-          />
+          <view v-if="showWelcomeCard" class="welcome-card">
+            <text class="welcome-title">准备好开始了吗？</text>
+            <text class="welcome-body">
+              输入你的目标、受众和期望格式，我会帮你拆解任务并给出高质量输出建议。
+            </text>
+            <view class="welcome-tags">
+              <view class="tag">写作灵感</view>
+              <view class="tag">方案优化</view>
+              <view class="tag">学习规划</view>
+            </view>
+          </view>
+
+          <MessageItem v-for="message in messages" :key="message.id" :message="message"
+            @preview-image="handlePreviewImage" />
 
           <view v-if="isAssistantTyping" class="typing-item" :id="typingAnchorId">
             <view class="typing-avatar">AI</view>
@@ -81,48 +78,28 @@
         </view>
       </view>
 
-      <QuickReply
-        v-if="quickRepliesVisible && quickReplies.length"
-        :quick-replies="quickReplies"
-        @quick-reply="handleQuickReply"
-      />
+      <QuickReply v-if="quickRepliesVisible && quickReplies.length" :quick-replies="quickReplies"
+        @quick-reply="handleQuickReply" />
     </view>
 
     <view class="composer-container">
-      <InputArea
-        v-model="inputValue"
-        :is-recording="isRecording"
-        :recording-duration="recordingDuration"
-        @send-message="handleSendMessage"
-        @upload-image="handleImageUpload"
-        @start-recording="startRecording"
-        @stop-recording="stopRecording"
-        @handle-recording-move="handleRecordingMove"
-      />
+      <InputArea v-model="inputValue" :is-recording="isRecording" :recording-duration="recordingDuration"
+        @send-message="handleSendMessage" @upload-image="handleImageUpload" @start-recording="startRecording"
+        @stop-recording="stopRecording" @handle-recording-move="handleRecordingMove" />
     </view>
 
-    <RecordingIndicator
-      v-if="isRecording"
-      :is-recording="isRecording"
-      :duration="recordingDuration"
-      :is-cancel="recordingCancel"
-      @cancel="cancelRecording"
-    />
+    <RecordingIndicator v-if="isRecording" :is-recording="isRecording" :duration="recordingDuration"
+      :is-cancel="recordingCancel" @cancel="cancelRecording" />
 
-    <FunctionMenu
-      :visible="functionMenuVisible"
-      @close="functionMenuVisible = false"
-      @clear-chat="handleClearChat"
-      @show-settings="handleShowSettings"
-      @show-about="handleShowAbout"
-    />
+    <FunctionMenu :visible="functionMenuVisible" @close="functionMenuVisible = false" @clear-chat="handleClearChat"
+      @show-settings="handleShowSettings" @show-about="handleShowAbout" />
 
     <CustomToast ref="toastRef" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import { onLoad, onShow, onUnload } from '@dcloudio/uni-app';
 import NavBar from '@/components/nav-bar.vue';
 import MessageItem from '@/components/chat/MessageItem.vue';
@@ -131,7 +108,7 @@ import QuickReply from '@/components/chat/QuickReply.vue';
 import FunctionMenu from '@/components/chat/FunctionMenu.vue';
 import RecordingIndicator from '@/components/chat/RecordingIndicator.vue';
 import CustomToast from '@/components/chat/CustomToast.vue';
-
+declare const wx: any;
 interface ChatMessage {
   id: number;
   role: 'assistant' | 'user';
@@ -145,7 +122,6 @@ interface ChatMessage {
     content: string;
   } | null;
 }
-
 interface ModelOption {
   value: string;
   text: string;
@@ -197,6 +173,7 @@ const selectedModelName = computed(() => {
   return models.value.find((m) => m.value === selectedModel.value)?.text ?? '通用模型';
 });
 const todayLabel = computed(() => formatDate(conversationStartedAt.value));
+const showWelcomeCard = computed(() => messages.value.length <= 1);
 const lastInteractionLabel = computed(() => {
   if (!messages.value.length) {
     return '尚未互动';
@@ -478,6 +455,30 @@ function formatDuration(duration: number): string {
   }
   return `${minutes} 分 ${seconds} 秒`;
 }
+function handleLogin() {
+  wx.login({
+    success(res: { code: any; }) {
+      console.log('code', res.code);
+      if (res.code) {
+        console.log('login success');
+        wx.getUserInfo({
+          desc: '获取用户信息',
+          success(profile: { userInfo: any; }) {
+            console.log('profile', profile);
+            wx.request({
+              url: 'http://localhost:3000/api/user/login',
+              method: 'POST',
+              data: { code: res.code, userInfo: profile.userInfo },
+              success(resp: { data: any; }) {
+                console.log('登录成功', resp.data);
+              }
+            });
+          }
+        });
+      }
+    }
+  });
+}
 
 onLoad(() => {
   scrollToBottom();
@@ -514,7 +515,7 @@ onUnload(() => {
 .bg-gradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, #f4f7ff 0%, #f9fbff 35%, #ffffff 100%);
+  background: linear-gradient(180deg, var(--color-bg-primary) 0%, var(--color-bg-card) 60%, var(--color-bg-primary) 100%);
 }
 
 .bg-glow-left {
@@ -523,7 +524,7 @@ onUnload(() => {
   left: -80rpx;
   width: 360rpx;
   height: 360rpx;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.22) 0%, rgba(129, 140, 248, 0) 70%);
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.18) 0%, transparent 70%);
 }
 
 .bg-glow-right {
@@ -532,7 +533,7 @@ onUnload(() => {
   right: -120rpx;
   width: 380rpx;
   height: 380rpx;
-  background: radial-gradient(circle, rgba(236, 72, 153, 0.18) 0%, rgba(236, 72, 153, 0) 70%);
+  background: radial-gradient(circle, rgba(236, 72, 153, 0.16) 0%, transparent 70%);
 }
 
 .bg-noise {
@@ -559,11 +560,11 @@ onUnload(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(236, 240, 255, 0.92));
+  background: var(--color-bg-card);
   border-radius: 32rpx;
   padding: 28rpx 30rpx;
-  box-shadow: 0 18rpx 38rpx rgba(99, 102, 241, 0.12);
-  border: 1rpx solid rgba(129, 140, 248, 0.12);
+  box-shadow: var(--shadow-soft);
+  border: 1rpx solid var(--color-border-subtle);
 }
 
 .session-title {
@@ -575,13 +576,13 @@ onUnload(() => {
 .session-name {
   font-size: 36rpx;
   font-weight: 700;
-  color: #2d3866;
+  color: var(--color-text-primary);
   letter-spacing: 2.2rpx;
 }
 
 .session-date {
   font-size: 24rpx;
-  color: rgba(45, 56, 102, 0.55);
+  color: var(--color-text-secondary);
   letter-spacing: 1rpx;
 }
 
@@ -597,7 +598,7 @@ onUnload(() => {
   padding: 12rpx 20rpx;
   border-radius: 999rpx;
   background: rgba(99, 102, 241, 0.08);
-  color: #3c4372;
+  color: var(--color-text-primary);
   font-size: 24rpx;
   font-weight: 600;
   letter-spacing: 0.6rpx;
@@ -619,11 +620,11 @@ onUnload(() => {
 
 .message-scroll {
   flex: 1;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--color-bg-elevated);
   border-radius: 36rpx;
   padding: 32rpx 26rpx;
-  box-shadow: 0 26rpx 48rpx rgba(79, 70, 229, 0.12);
-  border: 1rpx solid rgba(129, 140, 248, 0.1);
+  box-shadow: var(--shadow-strong);
+  border: 1rpx solid var(--color-border-subtle);
   box-sizing: border-box;
 }
 
@@ -631,6 +632,45 @@ onUnload(() => {
   display: flex;
   flex-direction: column;
   gap: 28rpx;
+}
+
+.welcome-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+  padding: 24rpx 26rpx;
+  border-radius: 28rpx;
+  background: var(--color-bg-soft);
+  border: 1rpx solid var(--color-border-soft);
+  box-shadow: var(--shadow-soft);
+}
+
+.welcome-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: 0.8rpx;
+}
+
+.welcome-body {
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.welcome-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.welcome-tags .tag {
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--color-text-primary);
+  font-size: 22rpx;
+  letter-spacing: 0.6rpx;
 }
 
 .typing-item {
@@ -644,14 +684,14 @@ onUnload(() => {
   width: 70rpx;
   height: 70rpx;
   border-radius: 22rpx;
-  background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-strong) 100%);
+  color: var(--color-text-inverse);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 28rpx;
   font-weight: 600;
-  box-shadow: 0 16rpx 28rpx rgba(99, 102, 241, 0.24);
+  box-shadow: var(--shadow-strong);
 }
 
 .typing-bubble {
@@ -661,10 +701,10 @@ onUnload(() => {
   display: flex;
   align-items: center;
   gap: 20rpx;
-  color: #4b4f7a;
+  color: var(--color-text-secondary);
   font-size: 26rpx;
   letter-spacing: 0.8rpx;
-  box-shadow: 0 20rpx 36rpx rgba(129, 140, 248, 0.16);
+  box-shadow: var(--shadow-soft);
 }
 
 .typing-dots {
@@ -699,16 +739,16 @@ onUnload(() => {
   align-items: center;
   padding: 20rpx 26rpx;
   border-radius: 26rpx;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1rpx solid rgba(129, 140, 248, 0.12);
-  box-shadow: 0 18rpx 28rpx rgba(99, 102, 241, 0.12);
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border-subtle);
+  box-shadow: var(--shadow-soft);
 }
 
 .utility-chip {
   padding: 16rpx 32rpx;
   border-radius: 999rpx;
   background: linear-gradient(135deg, rgba(129, 140, 248, 0.16), rgba(236, 233, 255, 0.12));
-  color: #3d4575;
+  color: var(--color-text-primary);
   font-size: 26rpx;
   font-weight: 600;
   letter-spacing: 0.6rpx;
@@ -728,31 +768,60 @@ onUnload(() => {
 
 .metric-label {
   font-size: 22rpx;
-  color: rgba(61, 69, 117, 0.6);
+  color: var(--color-text-secondary);
   letter-spacing: 0.6rpx;
 }
 
 .metric-value {
   font-size: 28rpx;
   font-weight: 700;
-  color: #2e3968;
+  color: var(--color-text-primary);
 }
 
 .composer-container {
   position: sticky;
   bottom: 0;
   padding: 0 24rpx 32rpx;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(236, 240, 255, 0.8) 45%, rgba(255, 255, 255, 0.95) 100%);
+  background: linear-gradient(180deg, transparent 0%, var(--color-bg-primary) 60%, var(--color-bg-card) 100%);
   backdrop-filter: blur(16rpx);
   -webkit-backdrop-filter: blur(16rpx);
   z-index: 2;
 }
 
+@media (max-width: 720rpx) {
+  .chat-body {
+    padding: 20rpx 18rpx 16rpx;
+    gap: 20rpx;
+  }
+
+  .session-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14rpx;
+    padding: 22rpx;
+  }
+
+  .utility-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16rpx;
+  }
+
+  .utility-metrics {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
 @keyframes typing {
-  0%, 80%, 100% {
+
+  0%,
+  80%,
+  100% {
     transform: scale(0.6);
     opacity: 0.4;
   }
+
   40% {
     transform: scale(1);
     opacity: 1;

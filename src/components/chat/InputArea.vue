@@ -186,11 +186,11 @@ function toggleHints() {
   gap: 12rpx;
   padding: 12rpx 18rpx;
   border-radius: 20rpx;
-  background: rgba(244, 246, 255, 0.88);
-  border: 1rpx solid rgba(209, 214, 255, 0.6);
-  color: #2f3a66;
+  background: var(--color-bg-soft);
+  border: 1rpx solid var(--color-border-soft);
+  color: var(--color-text-primary);
   font-size: 24rpx;
-  box-shadow: 0 10rpx 18rpx rgba(93, 105, 187, 0.12);
+  box-shadow: var(--shadow-soft);
 
   image {
     width: 30rpx;
@@ -210,11 +210,11 @@ function toggleHints() {
   gap: 16rpx;
   padding: 20rpx 22rpx;
   border-radius: 26rpx;
-  background: rgba(255, 255, 255, 0.96);
-  border: 1rpx solid rgba(221, 231, 255, 0.6);
-  box-shadow: 0 16rpx 28rpx rgba(93, 105, 187, 0.1);
-  backdrop-filter: blur(10rpx);
-  -webkit-backdrop-filter: blur(10rpx);
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border-subtle);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(var(--blur-card));
+  -webkit-backdrop-filter: blur(var(--blur-card));
 }
 
 .textarea {
@@ -225,7 +225,7 @@ function toggleHints() {
   border: none;
   background: transparent;
   font-size: 28rpx;
-  color: #2b345d;
+  color: var(--color-text-primary);
   line-height: 1.6;
   -webkit-appearance: none;
   appearance: none;
@@ -245,9 +245,9 @@ function toggleHints() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(244, 246, 255, 0.88);
-  border: 1rpx solid rgba(209, 214, 255, 0.5);
-  box-shadow: 0 12rpx 20rpx rgba(93, 105, 187, 0.16);
+  background: var(--color-bg-soft);
+  border: 1rpx solid var(--color-border-soft);
+  box-shadow: var(--shadow-soft);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 
   image {
@@ -308,20 +308,40 @@ function toggleHints() {
   gap: 8rpx;
   padding: 16rpx 22rpx;
   border-radius: 20rpx;
-  background: rgba(244, 246, 255, 0.85);
-  border: 1rpx solid rgba(209, 214, 255, 0.5);
-  box-shadow: 0 12rpx 20rpx rgba(93, 105, 187, 0.12);
+  background: var(--color-bg-soft);
+  border: 1rpx solid var(--color-border-soft);
+  box-shadow: var(--shadow-soft);
 }
 
 .hint-title {
   font-size: 24rpx;
   font-weight: 600;
-  color: rgba(43, 52, 93, 0.85);
+  color: var(--color-text-primary);
 }
 
 .hint-body {
   font-size: 24rpx;
-  color: rgba(43, 52, 93, 0.65);
+  color: var(--color-text-secondary);
   line-height: 1.5;
+}
+
+@media (max-width: 720rpx) {
+  .input-toolbar {
+    gap: 8rpx;
+  }
+
+  .capsule {
+    flex: 1;
+    justify-content: center;
+    padding: 10rpx 12rpx;
+  }
+
+  .input-surface {
+    padding: 18rpx 18rpx;
+  }
+
+  .hint-bar {
+    font-size: 22rpx;
+  }
 }
 </style>

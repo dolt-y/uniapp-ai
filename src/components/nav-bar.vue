@@ -18,11 +18,11 @@
         </view>
 
         <view class="nav-actions">
-          <view class="action-btn" @click="onViewHistory">
-            <image src="/static/icons/chatbubble-outline.svg" mode="aspectFit"></image>
+        <view class="action-btn" @click="onViewHistory">
+          <image src="/static/icons/history-outline.svg" mode="aspectFit"></image>
           </view>
           <view class="action-btn" @click="onOpenMenu">
-            <text class="more">···</text>
+          <image src="/static/icons/menu-sparkle.svg" mode="aspectFit"></image>
           </view>
         </view>
       </view>
@@ -30,7 +30,6 @@
       <view class="nav-bottom">
         <view class="model-panel" @click="onOpenModelSelector">
           <view class="panel-meta">
-            <text class="panel-label">当前模型</text>
             <text class="panel-name">{{ currentModelName }}</text>
           </view>
           <view class="panel-extra">
@@ -108,7 +107,7 @@ const onOpenModelSelector = () => {
   right: 0;
   z-index: 120;
   padding: calc(var(--status-bar-height, 0) + 18rpx) 24rpx 16rpx;
-  background: linear-gradient(180deg, rgba(245, 247, 255, 0.92) 0%, rgba(245, 247, 255, 0) 100%);
+  background: linear-gradient(180deg, var(--color-bg-primary) 0%, transparent 100%);
   box-sizing: border-box;
 }
 
@@ -118,11 +117,11 @@ const onOpenModelSelector = () => {
   gap: 18rpx;
   padding: 18rpx 22rpx;
   border-radius: 26rpx;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1rpx solid rgba(218, 227, 255, 0.7);
-  box-shadow: 0 14rpx 28rpx rgba(84, 97, 178, 0.12);
-  backdrop-filter: blur(12rpx);
-  -webkit-backdrop-filter: blur(12rpx);
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border-subtle);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(var(--blur-card));
+  -webkit-backdrop-filter: blur(var(--blur-card));
 }
 
 .nav-top {
@@ -153,7 +152,7 @@ const onOpenModelSelector = () => {
 .brand-title {
   font-size: 32rpx;
   font-weight: 700;
-  color: #273156;
+  color: var(--color-text-primary);
   letter-spacing: 1.2rpx;
 }
 
@@ -162,7 +161,7 @@ const onOpenModelSelector = () => {
   align-items: center;
   gap: 8rpx;
   font-size: 22rpx;
-  color: rgba(39, 49, 86, 0.55);
+  color: var(--color-text-secondary);
 }
 
 .tag {
@@ -186,9 +185,9 @@ const onOpenModelSelector = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(244, 246, 255, 0.9);
-  border: 1rpx solid rgba(208, 214, 255, 0.6);
-  box-shadow: 0 12rpx 20rpx rgba(84, 97, 178, 0.12);
+  background: var(--color-bg-soft);
+  border: 1rpx solid var(--color-border-soft);
+  box-shadow: var(--shadow-soft);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 
   image {
@@ -199,13 +198,13 @@ const onOpenModelSelector = () => {
 
   .more {
     font-size: 32rpx;
-    color: rgba(47, 58, 99, 0.7);
+    color: var(--color-text-secondary);
     line-height: 1;
   }
 
   &:active {
     transform: translateY(3rpx);
-    box-shadow: 0 8rpx 16rpx rgba(84, 97, 178, 0.18);
+    box-shadow: var(--shadow-strong);
   }
 }
 
@@ -222,9 +221,9 @@ const onOpenModelSelector = () => {
   justify-content: space-between;
   padding: 18rpx 20rpx;
   border-radius: 22rpx;
-  background: linear-gradient(135deg, rgba(244, 246, 255, 0.96), rgba(226, 233, 255, 0.9));
-  border: 1rpx solid rgba(197, 210, 255, 0.6);
-  box-shadow: inset 0 0 0 1rpx rgba(255, 255, 255, 0.5);
+  background: var(--color-bg-soft);
+  border: 1rpx solid var(--color-border-soft);
+  box-shadow: inset 0 0 0 1rpx rgba(255, 255, 255, 0.28);
 }
 
 .panel-meta {
@@ -235,13 +234,13 @@ const onOpenModelSelector = () => {
 
 .panel-label {
   font-size: 22rpx;
-  color: rgba(51, 59, 96, 0.6);
+  color: var(--color-text-secondary);
 }
 
 .panel-name {
   font-size: 30rpx;
   font-weight: 600;
-  color: #2f3a66;
+  color: var(--color-text-primary);
   letter-spacing: 0.8rpx;
 }
 
@@ -250,7 +249,7 @@ const onOpenModelSelector = () => {
   align-items: center;
   gap: 8rpx;
   font-size: 22rpx;
-  color: rgba(51, 59, 96, 0.55);
+  color: var(--color-text-secondary);
 
   image {
     width: 20rpx;
@@ -266,9 +265,9 @@ const onOpenModelSelector = () => {
   gap: 14rpx;
   padding: 12rpx 20rpx;
   border-radius: 22rpx;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #ec4899 100%);
-  color: #ffffff;
-  box-shadow: 0 18rpx 30rpx rgba(99, 102, 241, 0.22);
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-strong) 55%, var(--color-accent-contrast) 100%);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-strong);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 
   image {
@@ -279,7 +278,7 @@ const onOpenModelSelector = () => {
 
   &:active {
     transform: translateY(3rpx);
-    box-shadow: 0 12rpx 18rpx rgba(99, 102, 241, 0.25);
+    box-shadow: var(--shadow-soft);
   }
 }
 
@@ -297,5 +296,27 @@ const onOpenModelSelector = () => {
 .btn-caption {
   font-size: 20rpx;
   opacity: 0.8;
+}
+
+@media (max-width: 720rpx) {
+  .nav-shell {
+    padding: 16rpx 18rpx;
+    border-radius: 22rpx;
+  }
+
+  .nav-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12rpx;
+  }
+
+  .nav-bottom {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .primary-btn {
+    justify-content: center;
+  }
 }
 </style>

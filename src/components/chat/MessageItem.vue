@@ -104,7 +104,7 @@ const statusClass = computed(() => props.message.status || 'success');
     height: 70rpx;
     border-radius: 24rpx;
     margin: 0 8px;
-    background: linear-gradient(135deg, rgba(244, 246, 255, 0.92), rgba(228, 233, 255, 0.92));
+    background: linear-gradient(135deg, var(--color-bg-soft), var(--color-bg-card));
     flex-shrink: 0;
     overflow: hidden;
     box-shadow: 0 12rpx 24rpx rgba(102, 126, 234, 0.16);
@@ -125,7 +125,7 @@ const statusClass = computed(() => props.message.status || 'success');
 
   .message-name {
     font-size: 24rpx;
-    color: rgba(76, 86, 125, 0.7);
+    color: var(--color-text-secondary);
     font-weight: 500;
     letter-spacing: 1rpx;
     margin-left: 12rpx;
@@ -159,8 +159,8 @@ const statusClass = computed(() => props.message.status || 'success');
     }
 
     .message-bubble {
-      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
-      color: #ffffff;
+      background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-strong) 50%, var(--color-accent-contrast) 100%);
+      color: var(--color-text-inverse);
       border: none;
     }
 
@@ -172,9 +172,9 @@ const statusClass = computed(() => props.message.status || 'success');
 
   &.ai-message {
     .message-bubble {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(237, 242, 255, 0.94));
-      border: 1rpx solid rgba(99, 102, 241, 0.12);
-      color: #38416c;
+      background: linear-gradient(135deg, var(--color-bg-card), var(--color-bg-elevated));
+      border: 1rpx solid var(--color-border-soft);
+      color: var(--color-text-primary);
     }
 
     .avatar {
@@ -189,13 +189,13 @@ const statusClass = computed(() => props.message.status || 'success');
   }
 
   .quoted-message {
-    background-color: rgba(244, 246, 255, 0.92);
-    border: 1rpx solid rgba(102, 126, 234, 0.14);
+    background-color: var(--color-bg-soft);
+    border: 1rpx solid var(--color-border-soft);
     border-radius: 18rpx;
     padding: 16rpx 18rpx;
     margin-bottom: 14rpx;
     font-size: 24rpx;
-    color: rgba(55, 65, 81, 0.85);
+    color: var(--color-text-secondary);
     max-height: 160rpx;
     overflow: hidden;
     display: -webkit-box;
@@ -207,7 +207,7 @@ const statusClass = computed(() => props.message.status || 'success');
 
     .quoted-label {
       font-weight: 500;
-      color: #4f5b8c;
+      color: var(--color-text-primary);
       margin-right: 12rpx;
     }
   }
@@ -242,7 +242,7 @@ const statusClass = computed(() => props.message.status || 'success');
     gap: 14rpx;
     margin-top: 6rpx;
     font-size: 22rpx;
-    color: rgba(71, 85, 105, 0.7);
+    color: var(--color-text-secondary);
 
     &.user-meta {
       flex-direction: row-reverse;
@@ -265,7 +265,7 @@ const statusClass = computed(() => props.message.status || 'success');
 
     &.pending {
       background: rgba(99, 102, 241, 0.16);
-      color: #595eea;
+      color: var(--color-accent);
     }
 
     &.success {
