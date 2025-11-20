@@ -1,5 +1,5 @@
 <template>
-  <view class="chat-page">
+  <view class="chat-page" catchtouchmove="return">
     <!-- <view class="page-background">
       <view class="bg-gradient"></view>
       <view class="bg-glow-left"></view>
@@ -28,8 +28,8 @@
 						</view>
 				</view> -->
       <button open-type="getUserProfile" @tap="handleLogin">登录</button>
-      <scroll-view class="message-scroll" scroll-y :scroll-with-animation="true" :scroll-into-view="scrollTargetId"
-        enable-back-to-top>
+      <scroll-view class="message-scroll" :bounces="false" scroll-y :scroll-with-animation="true" :show-scrollbar="false"
+        :scroll-into-view="scrollTargetId" enable-back-to-top>
         <view class="message-feed">
           <view v-if="showWelcomeCard" class="welcome-card">
             <text class="welcome-title">准备好开始了吗？</text>
@@ -499,6 +499,7 @@ onUnload(() => {
 <style scoped lang="scss">
 .chat-page {
   min-height: 100vh;
+  width: 100%;
   display: flex;
   flex-direction: column;
   position: relative;

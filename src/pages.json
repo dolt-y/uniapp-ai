@@ -4,6 +4,7 @@
 			"path": "pages/chat/index",
 			"style": {
 				"navigationBarTitleText": "聊天"
+				
 			}
 		},
 		{
