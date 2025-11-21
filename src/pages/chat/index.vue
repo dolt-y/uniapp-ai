@@ -105,6 +105,9 @@ interface ChatMessage {
     content: string;
   } | null;
 }
+interface Session {
+  id: number;
+}
 interface ModelOption {
   value: string;
   text: string;
@@ -166,7 +169,7 @@ const lastInteractionLabel = computed(() => {
 const conversationDurationLabel = computed(() => {
   return formatDuration(Date.now() - conversationStartedAt.value);
 });
-
+const sessionId = ref<number>();
 const initializeConversation = () => {
   messageIdSeed.value = 0;
   conversationStartedAt.value = Date.now();
@@ -228,11 +231,11 @@ async function handleSendMessage(rawContent?: string) {
   lastUserMessage.value = userMessage;
   inputValue.value = '';
   scrollToBottom(`message-${userMessage.id}`);
-
-  await streamAssistantReply(userMessage, content);
+  let id = sessionId?.value;
+  await streamAssistantReply(userMessage, content, id);
 }
 
-function streamAssistantReply(userMessage, originalText) {
+function streamAssistantReply(userMessage, originalText, id) {
   isAssistantTyping.value = true;
 
   const assistantMessage: ChatMessage = {
@@ -260,18 +263,25 @@ function streamAssistantReply(userMessage, originalText) {
         messages: [
           { role: 'user', content: originalText }
         ],
-        stream: true
+        // stream: true,
+        sessionId: id
       },
 
       onMessage(payload) {
-        assistantMessage.content += payload;
-        messages.value = [...messages.value];
+        console.log('AI 回复:', payload);
+        const updated = {
+          ...assistantMessage,
+          content: assistantMessage.content + payload.reply.content
+        };
+
+        const index = messages.value.findIndex(m => m.id === assistantMessage.id);
+        messages.value.splice(index, 1, updated);
+        sessionId.value = payload.sessionId;
         scrollToBottom(`message-${assistantMessage.id}`);
       },
-
       onDone() {
         assistantMessage.status = 'success';
-        messages.value = [...messages.value];
+        // messages.value = [...messages.value];
         isAssistantTyping.value = false;
         resolve();
       },

@@ -1,37 +1,26 @@
 export default function streamRequest({ url, data, onMessage, onDone, onError }) {
-    const token = uni.getStorageSync('token');
+    const token = wx.getStorageSync('token');
 
-    const reqTask = uni.request({
+    wx.request({
         url,
         method: 'POST',
-        enableChunked: true,
         header: {
             'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         data,
-        onChunkReceived(res) {
-            console.log('onChunkReceived', res);
-            const text = new TextDecoder().decode(res.data);
-            const lines = text.split('\n');
-
-            lines.forEach(line => {
-                if (!line.startsWith('data: ')) return;
-                const payload = line.replace('data: ', '').trim();
-
-                if (payload === '[DONE]') {
-                    onDone && onDone();
-                    return;
-                }
-
-                onMessage && onMessage(payload);
-            });
+        responseType: 'text',
+        success(res) {
+            try {
+                const text = res.data
+                onMessage && onMessage(text);
+                onDone && onDone();
+            } catch (err) {
+                onError && onError(err);
+            }
         },
-
         fail(err) {
             onError && onError(err);
         }
     });
-
-    return reqTask;
 }

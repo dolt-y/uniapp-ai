@@ -91,7 +91,7 @@ const handleLogin = () => {
                                     icon: 'success'
                                 });
 
-                                uni.redirectTo({
+                                uni.navigateTo({
                                     url: '/pages/chat/index'
                                 });
                             })

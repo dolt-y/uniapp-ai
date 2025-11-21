@@ -96,8 +96,7 @@ watch(visible, (newVal) => {
 .custom-toast {
   position: fixed;
   top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  left: 5%;
   z-index: 9999;
   opacity: 0;
   pointer-events: none;
