@@ -106,21 +106,20 @@ function handleShowAbout() {
   background: var(--color-overlay);
   z-index: 1000;
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: 48rpx 32rpx;
+  justify-content: flex-start; // 左侧对齐
+  align-items: stretch; // 拉满高度
+  padding: 0;
   box-sizing: border-box;
   animation: fadeIn 0.28s ease;
 
   .function-menu-container {
-    width: 100%;
-    max-width: 640rpx;
+    width: 560rpx; // 抽屉宽度
+    height: 100%;
     background: var(--color-bg-card);
-    border-radius: 36rpx;
-    box-shadow: var(--shadow-strong);
+    box-shadow: 12rpx 0 30rpx rgba(0, 0, 0, 0.18);
     overflow: hidden;
-    animation: slideUp 0.28s ease;
-    border: 1rpx solid var(--color-border-subtle);
+    animation: slideInLeft 0.28s ease;
+    border-right: 1rpx solid var(--color-border-subtle);
     box-sizing: border-box;
     backdrop-filter: blur(var(--blur-card));
     -webkit-backdrop-filter: blur(var(--blur-card));
@@ -165,7 +164,7 @@ function handleShowAbout() {
   }
 
   .menu-content {
-    padding: 12rpx 28rpx 32rpx;
+    padding: 24rpx 28rpx 40rpx;
     display: flex;
     flex-direction: column;
     gap: 18rpx;
@@ -249,14 +248,15 @@ function handleShowAbout() {
   }
 }
 
-@keyframes slideUp {
+@keyframes slideInLeft {
   0% {
     opacity: 0;
-    transform: translateY(60rpx);
+    transform: translateX(-80rpx);
   }
   100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(0);
   }
 }
+
 </style>

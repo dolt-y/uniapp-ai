@@ -1,10 +1,16 @@
 {
 	"pages": [
 		{
+			"path": "pages/login/index",
+			"style": {
+				"navigationBarTitleText": "登录",
+				"navigationStyle": "custom"
+			}
+		},
+		{
 			"path": "pages/chat/index",
 			"style": {
 				"navigationBarTitleText": "聊天"
-				
 			}
 		},
 		{

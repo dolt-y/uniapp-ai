@@ -30,6 +30,7 @@
       <view class="nav-bottom">
         <view class="model-panel" @click="onOpenModelSelector">
           <view class="panel-meta">
+            <text class="panel-label">当前模型</text>
             <text class="panel-name">{{ currentModelName }}</text>
           </view>
           <view class="panel-extra">

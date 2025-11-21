@@ -16,22 +16,33 @@ onHide(() => {
 });
 </script>
 
-<style>
+<style lang="scss" scoped>
 /* 全局样式重置和基础设置 */
-view, text, button, input, textarea, image, swiper, swiper-item, scroll-view, navigator {
+view,
+text,
+button,
+input,
+textarea,
+image,
+swiper,
+swiper-item,
+scroll-view,
+navigator {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: 16px;
   color: $text-primary;
   background-color: $background-primary;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  -webkit-tap-highlight-color: transparent; /* 移除点击高亮 */
+  -webkit-tap-highlight-color: transparent;
+  /* 移除点击高亮 */
 }
 
 /* 页面容器样式 */
@@ -75,7 +86,8 @@ button:disabled {
 }
 
 /* 输入框基础样式 */
-input, textarea {
+input,
+textarea {
   border: 1px solid $border-light;
   outline: none;
   border-radius: 12px;
@@ -86,7 +98,8 @@ input, textarea {
   color: $text-primary;
 }
 
-input:focus, textarea:focus {
+input:focus,
+textarea:focus {
   border-color: $primary-color;
   box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
 }

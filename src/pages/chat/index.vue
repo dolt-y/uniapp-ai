@@ -1,35 +1,18 @@
 <template>
-  <view class="chat-page" catchtouchmove="return">
-    <!-- <view class="page-background">
+  <view class="chat-page">
+    <view class="page-background">
       <view class="bg-gradient"></view>
       <view class="bg-glow-left"></view>
       <view class="bg-glow-right"></view>
       <view class="bg-noise"></view>
-    </view> -->
+    </view>
 
     <NavBar :current-model="selectedModel" :model-list="models" @new-conversation="handleNewConversation"
       @view-history="handleViewHistory" @open-model-selector="openModelSelector" @open-menu="openFunctionMenu" />
 
     <view class="chat-body">
-      <!-- <view class="session-header">
-        <view class="session-title">
-          <text class="session-name">今日会话</text>
-          <text class="session-date">{{ todayLabel }}</text>
-							</view>
-        <view class="session-badges">
-          <view class="badge">
-            <view class="badge-dot primary"></view>
-            <text>{{ selectedModelName }}</text>
-							</view>
-          <view class="badge">
-            <view class="badge-dot success"></view>
-            <text>{{ messageCount }} 条对话</text>
-							</view>
-						</view>
-				</view> -->
-      <button open-type="getUserProfile" @tap="handleLogin">登录</button>
-      <scroll-view class="message-scroll" :bounces="false" scroll-y :scroll-with-animation="true" :show-scrollbar="false"
-        :scroll-into-view="scrollTargetId" enable-back-to-top>
+      <scroll-view class="message-scroll" :bounces="false" scroll-y :scroll-with-animation="true"
+        :show-scrollbar="false" :scroll-into-view="scrollTargetId" enable-back-to-top>
         <view class="message-feed">
           <view v-if="showWelcomeCard" class="welcome-card">
             <text class="welcome-title">准备好开始了吗？</text>
@@ -108,7 +91,7 @@ import QuickReply from '@/components/chat/QuickReply.vue';
 import FunctionMenu from '@/components/chat/FunctionMenu.vue';
 import RecordingIndicator from '@/components/chat/RecordingIndicator.vue';
 import CustomToast from '@/components/chat/CustomToast.vue';
-declare const wx: any;
+import streamRequest from '@/utils/streamRequest.js';
 interface ChatMessage {
   id: number;
   role: 'assistant' | 'user';
@@ -246,58 +229,77 @@ async function handleSendMessage(rawContent?: string) {
   inputValue.value = '';
   scrollToBottom(`message-${userMessage.id}`);
 
-  await simulateAssistantReply(userMessage, content);
+  await streamAssistantReply(userMessage, content);
 }
 
-async function simulateAssistantReply(userMessage: ChatMessage, originalText: string) {
+function streamAssistantReply(userMessage, originalText) {
   isAssistantTyping.value = true;
-  const delay = 900 + Math.random() * 900;
 
-  try {
-    await new Promise((resolve) => setTimeout(resolve, delay));
-
-    const shouldFail = Math.random() < 0.04;
-    if (shouldFail) {
-      userMessage.status = 'error';
-      showToast('网络有些拥堵，稍后再试一次', 'error');
-      return;
+  const assistantMessage: ChatMessage = {
+    id: nextMessageId(),
+    role: 'assistant',
+    type: 'text',
+    content: '',
+    status: 'pending',
+    timestamp: Date.now(),
+    quoted: {
+      id: userMessage.id,
+      role: 'user',
+      content: originalText
     }
+  };
 
-    userMessage.status = 'success';
+  messages.value.push(assistantMessage);
+  scrollToBottom(`message-${assistantMessage.id}`);
 
-    const assistantMessage: ChatMessage = {
-      id: nextMessageId(),
-      role: 'assistant',
-      type: 'text',
-      content: generateAssistantReply(originalText),
-      status: 'success',
-      timestamp: Date.now(),
-      quoted: {
-        id: userMessage.id,
-        role: 'user',
-        content: originalText
+  return new Promise<void>((resolve) => {
+
+    streamRequest({
+      url: 'http://localhost:3000/api/ai/chat',
+      data: {
+        messages: [
+          { role: 'user', content: originalText }
+        ],
+        stream: true
+      },
+
+      onMessage(payload) {
+        assistantMessage.content += payload;
+        messages.value = [...messages.value];
+        scrollToBottom(`message-${assistantMessage.id}`);
+      },
+
+      onDone() {
+        assistantMessage.status = 'success';
+        messages.value = [...messages.value];
+        isAssistantTyping.value = false;
+        resolve();
+      },
+
+      onError(err: any) {
+        assistantMessage.status = 'error';
+        showToast('AI 服务异常，请稍后再试', 'error');
+        isAssistantTyping.value = false;
+        console.error('SSE 出错:', err);
       }
-    };
+    });
 
-    messages.value.push(assistantMessage);
-    scrollToBottom(`message-${assistantMessage.id}`);
-  } finally {
-    isAssistantTyping.value = false;
-  }
+  });
 }
 
-function generateAssistantReply(question: string): string {
-  return `【${selectedModelName.value}】
 
-我理解到你正在关注：「${question}」。
+// function generateAssistantReply(question: string): string {
+//   return `【${selectedModelName.value}】
 
-以下是我为你整理的关键建议：
-1. 明确目标与限制条件，确保执行路径清晰；
-2. 列出需要的信息输入与产出格式，方便快速迭代；
-3. 将工作拆分为 3 个以内的阶段，每个阶段都留下复盘空间；
+// 我理解到你正在关注：「${question}」。
 
-如需我继续展开某个环节，直接告诉我即可。`;
-}
+// 以下是我为你整理的关键建议：
+// 1. 明确目标与限制条件，确保执行路径清晰；
+// 2. 列出需要的信息输入与产出格式，方便快速迭代；
+// 3. 将工作拆分为 3 个以内的阶段，每个阶段都留下复盘空间；
+
+// 如需我继续展开某个环节，直接告诉我即可。`;
+// }
 
 function handleQuickReply(reply: string) {
   handleSendMessage(reply);
@@ -454,30 +456,6 @@ function formatDuration(duration: number): string {
     return `${seconds} 秒`;
   }
   return `${minutes} 分 ${seconds} 秒`;
-}
-function handleLogin() {
-  wx.login({
-    success(res: { code: any; }) {
-      console.log('code', res.code);
-      if (res.code) {
-        console.log('login success');
-        wx.getUserInfo({
-          desc: '获取用户信息',
-          success(profile: { userInfo: any; }) {
-            console.log('profile', profile);
-            wx.request({
-              url: 'http://localhost:3000/api/user/login',
-              method: 'POST',
-              data: { code: res.code, userInfo: profile.userInfo },
-              success(resp: { data: any; }) {
-                console.log('登录成功', resp.data);
-              }
-            });
-          }
-        });
-      }
-    }
-  });
 }
 
 onLoad(() => {
