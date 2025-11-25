@@ -120,6 +120,9 @@ const quickReplies = ref<string[]>([
   // 可以添加更多快捷回复
 ]);
 ```
+### 后端项目地址
+
+https://github.com/dolt-y/uniapp-ai-server
 
 ## 未来优化方向
 
