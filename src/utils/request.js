@@ -11,6 +11,7 @@ export default function request(url, data = {}, method = 'GET', showError = true
             method,
             data,
             header: {
+                'Cache-Control': 'no-cache',
                 'content-type': 'application/json',
                 ...(token ? { 'Authorization': `Bearer ${token}` } : {})
             },

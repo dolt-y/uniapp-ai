@@ -35,7 +35,7 @@
           </view>
           <view class="panel-extra">
             <text>切换体验</text>
-            <image src="/static/icons/arrow_bottom.png" mode="aspectFit"></image>
+            <!-- <image src="/static/icons/arrow_bottom.png" mode="aspectFit"></image> -->
           </view>
         </view>
 

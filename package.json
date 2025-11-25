@@ -51,6 +51,8 @@
     "@dcloudio/uni-mp-xhs": "3.0.0-4030620241128001",
     "@dcloudio/uni-quickapp-webview": "3.0.0-4030620241128001",
     "@dcloudio/uni-ui": "^1.5.7",
+    "markdown-it": "^14.1.0",
+    "markdown-it-task-lists": "^2.1.1",
     "vue": "^3.4.21",
     "vue-i18n": "^9.1.9"
   },

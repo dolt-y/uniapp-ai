@@ -5,43 +5,25 @@
         <image src="/static/icons/image-outline.svg" mode="aspectFit"></image>
         <text>插入图片</text>
       </view>
-      <view class="capsule" @click="toggleHints">
+      <view class="capsule" @click="onViewHistory">
         <image src="/static/icons/chatbubble-outline.svg" mode="aspectFit"></image>
-        <text>{{ showHints ? '收起提示' : '写作建议' }}</text>
+        <text>{{ '历史会话' }}</text>
       </view>
     </view>
     <view class="input-surface">
-      <textarea
-        v-model="inputContent"
-        class="textarea"
-        placeholder="组织好你的问题，让我为你补全灵感..."
-        placeholder-style="color: rgba(47,58,102,0.35)"
-        maxlength="1000"
-        auto-height
-        :disabled="isRecording"
-        @focus="onInputFocus"
-        @blur="onInputBlur"
-      ></textarea>
+      <textarea v-model="inputContent" class="textarea" placeholder="组织好你的问题，让我为你补全灵感..."
+        placeholder-style="color: rgba(47,58,102,0.35)" maxlength="1000" auto-height :disabled="isRecording"
+        @focus="onInputFocus" @blur="onInputBlur"></textarea>
       <view class="input-actions">
-        <view
-          class="icon-btn"
-          @touchstart="startRecording"
-          @touchmove="handleRecordingMove"
-          @touchend="stopRecording"
-          @touchcancel="stopRecording"
-          :class="{ active: isRecording }"
-          style="-webkit-user-select: none; user-select: none;"
-        >
+        <view class="icon-btn" @touchstart="startRecording" @touchmove="handleRecordingMove" @touchend="stopRecording"
+          @touchcancel="stopRecording" :class="{ active: isRecording }"
+          style="-webkit-user-select: none; user-select: none;">
           <image src="/static/icons/mic-outline.svg" mode="aspectFit"></image>
         </view>
         <view class="send-btn" :class="{ disabled: !canSend }" @click="handleSend">
           <image src="/static/icons/send-outline.svg" mode="aspectFit"></image>
         </view>
       </view>
-    </view>
-    <view v-if="showHints && !isRecording" class="hint-bar">
-      <text class="hint-title">写作小贴士</text>
-      <text class="hint-body">提供背景、目标和期望格式，可以显著提升回答的精准度。</text>
     </view>
   </view>
 </template>
@@ -73,13 +55,13 @@ const emit = defineEmits([
   'toggle-voice',
   'start-recording',
   'stop-recording',
-  'handle-recording-move'
+  'handle-recording-move',
+  'viewHistory'
 ]);
 
 // 响应式数据
 const inputContent = ref(props.modelValue);
 const isInputFocused = ref(false);
-const showHints = ref(false);
 
 watch(
   () => props.modelValue,
@@ -109,10 +91,11 @@ function handleSend() {
   if (content) {
     emit('send-message', content);
     inputContent.value = '';
-    showHints.value = false;
   }
 }
-
+const onViewHistory = () => {
+  emit('viewHistory');
+}
 // 图片上传
 function handleImageUpload() {
   if (props.isRecording) return;
@@ -159,10 +142,6 @@ function onInputFocus() {
 function onInputBlur() {
   isInputFocused.value = false;
 }
-
-function toggleHints() {
-  showHints.value = !showHints.value;
-}
 </script>
 
 <style lang="scss" scoped>
@@ -208,13 +187,13 @@ function toggleHints() {
   display: flex;
   align-items: flex-end;
   gap: 16rpx;
-  padding: 20rpx 22rpx;
+  padding: 16rpx;
   border-radius: 26rpx;
   background: var(--color-bg-card);
   border: 1rpx solid var(--color-border-subtle);
   box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(var(--blur-card));
-  -webkit-backdrop-filter: blur(var(--blur-card));
+  // backdrop-filter: blur(var(--blur-card));
+  // -webkit-backdrop-filter: blur(var(--blur-card));
 }
 
 .textarea {

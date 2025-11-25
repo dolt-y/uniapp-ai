@@ -7,8 +7,8 @@
       <view class="bg-noise"></view>
     </view>
 
-    <NavBar :current-model="selectedModel" :model-list="models" @new-conversation="handleNewConversation"
-      @view-history="handleViewHistory" @open-model-selector="openModelSelector" @open-menu="openFunctionMenu" />
+    <!-- <NavBar :current-model="selectedModel" :model-list="models" @new-conversation="handleNewConversation"
+      @view-history="handleViewHistory" @open-model-selector="openModelSelector" @open-menu="openFunctionMenu" /> -->
 
     <view class="chat-body">
       <scroll-view class="message-scroll" :bounces="false" scroll-y :scroll-with-animation="true"
@@ -45,7 +45,7 @@
         </view>
       </scroll-view>
 
-      <view class="utility-bar">
+      <!-- <view class="utility-bar">
         <view class="utility-chip" @click="toggleQuickReplies">
           <text>{{ quickRepliesVisible ? '收起推荐提问' : '展开推荐提问' }}</text>
         </view>
@@ -59,16 +59,17 @@
             <text class="metric-value">{{ conversationDurationLabel }}</text>
           </view>
         </view>
-      </view>
+      </view> -->
 
-      <QuickReply v-if="quickRepliesVisible && quickReplies.length" :quick-replies="quickReplies"
-        @quick-reply="handleQuickReply" />
+      <!-- <QuickReply v-if="quickRepliesVisible && quickReplies.length" :quick-replies="quickReplies"
+        @quick-reply="handleQuickReply" /> -->
     </view>
 
     <view class="composer-container">
       <InputArea v-model="inputValue" :is-recording="isRecording" :recording-duration="recordingDuration"
         @send-message="handleSendMessage" @upload-image="handleImageUpload" @start-recording="startRecording"
-        @stop-recording="stopRecording" @handle-recording-move="handleRecordingMove" />
+        @stop-recording="stopRecording" @handle-recording-move="handleRecordingMove"
+        @view-history="handleViewHistory" />
     </view>
 
     <RecordingIndicator v-if="isRecording" :is-recording="isRecording" :duration="recordingDuration"
@@ -76,7 +77,8 @@
 
     <FunctionMenu :visible="functionMenuVisible" @close="functionMenuVisible = false" @clear-chat="handleClearChat"
       @show-settings="handleShowSettings" @show-about="handleShowAbout" />
-
+    <HistroySessions :visible="historySessionsVisible" :active-session-id="sessionId"
+      @close="historySessionsVisible = false" @select-session="handleSelectSession" />
     <CustomToast ref="toastRef" />
   </view>
 </template>
@@ -91,7 +93,9 @@ import QuickReply from '@/components/chat/QuickReply.vue';
 import FunctionMenu from '@/components/chat/FunctionMenu.vue';
 import RecordingIndicator from '@/components/chat/RecordingIndicator.vue';
 import CustomToast from '@/components/chat/CustomToast.vue';
+import HistroySessions from '@/components/chat/HistroySessions.vue';
 import streamRequest from '@/utils/streamRequest.js';
+import request from '@/utils/request';
 interface ChatMessage {
   id: number;
   role: 'assistant' | 'user';
@@ -106,19 +110,30 @@ interface ChatMessage {
   } | null;
 }
 interface Session {
-  id: number;
+  id: number | string;
+  title?: string;
+  summary?: string;
+  created_at?: string;
 }
 interface ModelOption {
   value: string;
   text: string;
 }
-
+interface user {
+  openid: string;
+  nickName: string;
+  avatarUrl: string;
+}
 type ToastExpose = {
   showToast: (options: { message: string; type?: 'success' | 'error' | 'warning' | 'info'; duration?: number }) => void;
   hideToast: () => void;
   clearTimer: () => void;
 };
-
+type HistoryMessage = {
+  role: 'assistant' | 'user';
+  content: string;
+  created_at?: string;
+};
 const models = ref<ModelOption[]>([
   { value: 'model_a', text: '通用模型 A' },
   { value: 'model_b', text: '专业模型 B' },
@@ -144,6 +159,7 @@ const quickReplies = ref<string[]>([
 ]);
 
 const functionMenuVisible = ref<boolean>(false);
+const historySessionsVisible = ref<boolean>(false);
 const isRecording = ref<boolean>(false);
 const recordingDuration = ref<number>(0);
 const recordingCancel = ref<boolean>(false);
@@ -169,7 +185,8 @@ const lastInteractionLabel = computed(() => {
 const conversationDurationLabel = computed(() => {
   return formatDuration(Date.now() - conversationStartedAt.value);
 });
-const sessionId = ref<number>();
+const sessionId = ref<number | string>();
+const userInfo = ref<user>();
 const initializeConversation = () => {
   messageIdSeed.value = 0;
   conversationStartedAt.value = Date.now();
@@ -189,7 +206,7 @@ function createAssistantGreeting(): ChatMessage {
     id: nextMessageId(),
     role: 'assistant',
     type: 'text',
-    content: '你好，我是你的 AI 助手。随时告诉我你的想法，我会帮你整理、发散并给出下一步建议。',
+    content: '你好，我是你的 AI 助手小梦。随时告诉我你的想法，我会帮你整理、发散并给出下一步建议。',
     status: 'success',
     timestamp: Date.now(),
     quoted: null
@@ -200,6 +217,31 @@ function scrollToBottom(targetId?: string) {
   nextTick(() => {
     scrollTargetId.value = targetId ?? bottomAnchorId;
   });
+}
+
+function applyHistoryMessages(rawMessages: HistoryMessage[]) {
+  if (!rawMessages.length) {
+    initializeConversation();
+    return;
+  }
+
+  messageIdSeed.value = 0;
+  const parsedMessages = rawMessages.map((item) => ({
+    id: nextMessageId(),
+    role: item.role as 'assistant' | 'user',
+    type: 'text' as const,
+    content: item.content,
+    status: 'success' as const,
+    timestamp: item.created_at ? new Date(item.created_at).getTime() : Date.now(),
+    quoted: null
+  }));
+
+  messages.value = parsedMessages;
+  conversationStartedAt.value = parsedMessages[0].timestamp;
+  lastUserMessage.value = [...parsedMessages].reverse().find((msg) => msg.role === 'user') ?? null;
+  isAssistantTyping.value = false;
+  inputValue.value = '';
+  scrollToBottom();
 }
 
 function showToast(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') {
@@ -297,20 +339,6 @@ function streamAssistantReply(userMessage, originalText, id) {
   });
 }
 
-
-// function generateAssistantReply(question: string): string {
-//   return `【${selectedModelName.value}】
-
-// 我理解到你正在关注：「${question}」。
-
-// 以下是我为你整理的关键建议：
-// 1. 明确目标与限制条件，确保执行路径清晰；
-// 2. 列出需要的信息输入与产出格式，方便快速迭代；
-// 3. 将工作拆分为 3 个以内的阶段，每个阶段都留下复盘空间；
-
-// 如需我继续展开某个环节，直接告诉我即可。`;
-// }
-
 function handleQuickReply(reply: string) {
   handleSendMessage(reply);
 }
@@ -359,9 +387,30 @@ function handleNewConversation() {
 }
 
 function handleViewHistory() {
-  showToast('历史记录面板正在设计中，敬请期待', 'info');
+  historySessionsVisible.value = true;
+  // showToast('历史记录面板正在设计中，敬请期待', 'info');
 }
+async function handleSelectSession(session: Session) {
+  if (!session?.id) {
+    showToast('无法识别该会话', 'warning');
+    return;
+  }
 
+  try {
+    uni.showLoading({ title: '加载会话...', mask: true });
+    const res: any = await request(`http://localhost:3000/api/ai/sessions/${session.id}/messages`);
+    const historyMessages = Array.isArray(res?.messages) ? res.messages : [];
+    applyHistoryMessages(historyMessages);
+    sessionId.value = typeof session.id === 'string' ? session.id : Number(session.id);
+    historySessionsVisible.value = false;
+    showToast('历史会话已加载', 'success');
+  } catch (error) {
+    console.error('加载历史会话失败', error);
+    showToast('历史会话加载失败', 'error');
+  } finally {
+    uni.hideLoading();
+  }
+}
 function openModelSelector() {
   const itemList = models.value.map((item) => item.text);
   uni.showActionSheet({
@@ -467,8 +516,16 @@ function formatDuration(duration: number): string {
   }
   return `${minutes} 分 ${seconds} 秒`;
 }
-
+// 获取用户信息
+function getUserInfo() {
+  if (uni.getStorageSync('user')) return
+  request('http://localhost:3000/api/user/info').then(res => {
+    userInfo.value = res.user;
+    uni.setStorageSync('user', res.user)
+  })
+}
 onLoad(() => {
+  getUserInfo();
   scrollToBottom();
 });
 
@@ -492,57 +549,83 @@ onUnload(() => {
   flex-direction: column;
   position: relative;
   overflow: hidden;
-}
 
-.page-background {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-}
+  .page-background {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
 
-.bg-gradient {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, var(--color-bg-primary) 0%, var(--color-bg-card) 60%, var(--color-bg-primary) 100%);
-}
+    .bg-gradient {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, var(--color-bg-primary) 0%, var(--color-bg-card) 60%, var(--color-bg-primary) 100%);
+    }
 
-.bg-glow-left {
-  position: absolute;
-  top: -120rpx;
-  left: -80rpx;
-  width: 360rpx;
-  height: 360rpx;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.18) 0%, transparent 70%);
-}
+    .bg-glow-left {
+      position: absolute;
+      top: -120rpx;
+      left: -80rpx;
+      width: 360rpx;
+      height: 360rpx;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.18) 0%, transparent 70%);
+    }
 
-.bg-glow-right {
-  position: absolute;
-  bottom: 120rpx;
-  right: -120rpx;
-  width: 380rpx;
-  height: 380rpx;
-  background: radial-gradient(circle, rgba(236, 72, 153, 0.16) 0%, transparent 70%);
-}
+    .bg-glow-right {
+      position: absolute;
+      bottom: 120rpx;
+      right: -120rpx;
+      width: 380rpx;
+      height: 380rpx;
+      background: radial-gradient(circle, rgba(236, 72, 153, 0.16) 0%, transparent 70%);
+    }
 
-.bg-noise {
-  position: absolute;
-  inset: 0;
-  opacity: 0.06;
-  background-image: linear-gradient(90deg, rgba(99, 102, 241, 0.12) 1px, transparent 0), linear-gradient(rgba(129, 140, 248, 0.12) 1px, transparent 0);
-  background-size: 24rpx 24rpx;
-  mix-blend-mode: soft-light;
-}
+    .bg-noise {
+      position: absolute;
+      inset: 0;
+      opacity: 0.06;
+      background-image: linear-gradient(90deg, rgba(99, 102, 241, 0.12) 1px, transparent 0), linear-gradient(rgba(129, 140, 248, 0.12) 1px, transparent 0);
+      background-size: 24rpx 24rpx;
+      mix-blend-mode: soft-light;
+    }
+  }
 
-.chat-body {
-  position: relative;
-  z-index: 1;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 28rpx 24rpx 20rpx;
-  gap: 28rpx;
-  box-sizing: border-box;
+  .chat-body {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 28rpx 24rpx 20rpx;
+    gap: 28rpx;
+    box-sizing: border-box;
+
+    .message-scroll {
+      flex: 1;
+      // background: var(--color-bg-elevated);
+      // border-radius: 36rpx;
+      padding: 32rpx 26rpx;
+      // box-shadow: var(--shadow-strong);
+      // border: 1rpx solid var(--color-border-subtle);
+      box-sizing: border-box;
+
+      .message-feed {
+        display: flex;
+        flex-direction: column;
+        gap: 28rpx;
+      }
+    }
+  }
+
+  .composer-container {
+    position: sticky;
+    bottom: 0;
+    padding: 0 24rpx 32rpx;
+    background: linear-gradient(180deg, transparent 0%, var(--color-bg-primary) 60%, var(--color-bg-card) 100%);
+    backdrop-filter: blur(16rpx);
+    -webkit-backdrop-filter: blur(16rpx);
+    z-index: 2;
+  }
 }
 
 .session-header {
@@ -605,22 +688,6 @@ onUnload(() => {
   &.success {
     background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
   }
-}
-
-.message-scroll {
-  flex: 1;
-  background: var(--color-bg-elevated);
-  border-radius: 36rpx;
-  padding: 32rpx 26rpx;
-  box-shadow: var(--shadow-strong);
-  border: 1rpx solid var(--color-border-subtle);
-  box-sizing: border-box;
-}
-
-.message-feed {
-  display: flex;
-  flex-direction: column;
-  gap: 28rpx;
 }
 
 .welcome-card {
@@ -767,15 +834,6 @@ onUnload(() => {
   color: var(--color-text-primary);
 }
 
-.composer-container {
-  position: sticky;
-  bottom: 0;
-  padding: 0 24rpx 32rpx;
-  background: linear-gradient(180deg, transparent 0%, var(--color-bg-primary) 60%, var(--color-bg-card) 100%);
-  backdrop-filter: blur(16rpx);
-  -webkit-backdrop-filter: blur(16rpx);
-  z-index: 2;
-}
 
 @media (max-width: 720rpx) {
   .chat-body {

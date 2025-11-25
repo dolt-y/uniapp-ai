@@ -1,20 +1,15 @@
 <template>
-  <view class="custom-toast" :class="{ 'show': visible }"
-    :style="{ transform: `translateY(${translateY}px)` }"
-  >
+  <view class="custom-toast" :class="{ 'show': visible }">
     <view class="toast-content"
       :class="{ 'success': type === 'success', 'error': type === 'error', 'warning': type === 'warning', 'info': type === 'info' }"
     >
       <view class="toast-icon">
-      <!-- 成功图标 -->
-      <image v-if="type === 'success'" src="/static/icons/checkmark-circle-outline.svg" mode="aspectFit"></image>
-      <!-- 错误图标 -->
-      <image v-else-if="type === 'error'" src="/static/icons/close-circle-outline.svg" mode="aspectFit"></image>
-      <!-- 警告图标 -->
-      <image v-else-if="type === 'warning'" src="/static/icons/alert-circle-outline.svg" mode="aspectFit"></image>
-      <!-- 信息图标 -->
-      <image v-else src="/static/icons/information-circle-outline.svg" mode="aspectFit"></image>
-    </view>
+        <!-- 使用CSS绘制的图标替代图片 -->
+        <view v-if="type === 'success'" class="icon-checkmark"></view>
+        <view v-else-if="type === 'error'" class="icon-close"></view>
+        <view v-else-if="type === 'warning'" class="icon-alert"></view>
+        <view v-else class="icon-info"></view>
+      </view>
       <view class="toast-text">{{ message }}</view>
     </view>
   </view>
@@ -95,112 +90,189 @@ watch(visible, (newVal) => {
 <style lang="scss" scoped>
 .custom-toast {
   position: fixed;
-  top: 50%;
-  left: 5%;
+  /* 改为从顶部显示，更符合移动端习惯 */
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 9999;
+  /* 初始状态向上移动并透明 */
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   
   &.show {
+    /* 显示时平滑滑入 */
     opacity: 1;
     pointer-events: auto;
+    animation: slideDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .toast-content {
     display: flex;
     align-items: center;
     padding: 12px 20px;
-    background-color: rgba(0, 0, 0, 0.8);
-    border-radius: 24px;
-    min-width: 120px;
+    /* 简化为纯色背景，更现代简洁 */
+    background-color: #FFFFFF;
+    border-radius: 12px;
+    min-width: 100px;
     max-width: 80vw;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     position: relative;
     overflow: hidden;
-    
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-      transition: left 0.8s ease;
-    }
+    /* 添加左侧彩色条 */
+    border-left: 4px solid #3B82F6;
 
-    &:hover::before {
-      left: 100%;
-    }
-
-    // 不同类型的颜色
     &.success {
-      background-color: rgba(7, 193, 96, 0.9);
+      border-left-color: #10B981;
+      
+      .toast-icon {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #10B981;
+      }
     }
 
     &.error {
-      background-color: rgba(255, 87, 34, 0.9);
+      border-left-color: #EF4444;
+      
+      .toast-icon {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #EF4444;
+      }
     }
 
     &.warning {
-      background-color: rgba(255, 165, 0, 0.9);
+      border-left-color: #F59E0B;
+      
+      .toast-icon {
+        background-color: rgba(245, 158, 11, 0.1);
+        color: #F59E0B;
+      }
     }
 
     &.info {
-      background-color: rgba(51, 51, 51, 0.9);
+      border-left-color: #3B82F6;
+      
+      .toast-icon {
+        background-color: rgba(59, 130, 246, 0.1);
+        color: #3B82F6;
+      }
     }
   }
 
   .toast-icon {
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     margin-right: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-
-    image {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
+    border-radius: 8px;
+    background-color: rgba(59, 130, 246, 0.1);
+    color: #3B82F6;
+    
+    /* CSS绘制的图标 */
+    .icon-checkmark,
+    .icon-close,
+    .icon-alert,
+    .icon-info {
+      position: relative;
+      width: 16px;
+      height: 16px;
+    }
+    
+    /* 成功图标 - 对勾 */
+    .icon-checkmark::before {
+      content: '';
+      position: absolute;
+      width: 6px;
+      height: 10px;
+      border: solid currentColor;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+      left: 5px;
+      top: 2px;
+    }
+    
+    /* 错误图标 - X */
+    .icon-close::before,
+    .icon-close::after {
+      content: '';
+      position: absolute;
+      width: 2px;
+      height: 16px;
+      background-color: currentColor;
+      left: 7px;
+      top: 0;
+    }
+    .icon-close::before {
+      transform: rotate(45deg);
+    }
+    .icon-close::after {
+      transform: rotate(-45deg);
+    }
+    
+    /* 警告图标 - ! */
+    .icon-alert::before {
+      content: '';
+      position: absolute;
+      width: 2px;
+      height: 8px;
+      background-color: currentColor;
+      left: 7px;
+      top: 1px;
+    }
+    .icon-alert::after {
+      content: '';
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      background-color: currentColor;
+      border-radius: 50%;
+      left: 6.5px;
+      bottom: 1px;
+    }
+    
+    /* 信息图标 - i */
+    .icon-info::before {
+      content: '';
+      position: absolute;
+      width: 2px;
+      height: 8px;
+      background-color: currentColor;
+      left: 7px;
+      bottom: 1px;
+    }
+    .icon-info::after {
+      content: '';
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      background-color: currentColor;
+      border-radius: 50%;
+      left: 6.5px;
+      top: 1px;
     }
   }
 
   .toast-text {
-    font-size: 16px;
-    color: #FFFFFF;
+    font-size: 14px;
+    color: #1F2937;
     line-height: 1.5;
-    text-align: center;
+    font-weight: 500;
     word-break: break-word;
-    max-width: calc(100% - 36px);
   }
 }
 
-// 动画效果
-@keyframes fadeIn {
+/* 简洁的滑入动画 */
+@keyframes slideDown {
   from {
     opacity: 0;
-    transform: translate(-50%, -50%) translateY(50px);
+    transform: translateX(-50%) translateY(-20px);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, -50%) translateY(0);
-  }
-}
-
-@keyframes fadeOut {
-  from {
-    opacity: 1;
-    transform: translate(-50%, -50%) translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translate(-50%, -50%) translateY(50px);
+    transform: translateX(-50%) translateY(0);
   }
 }
 </style>

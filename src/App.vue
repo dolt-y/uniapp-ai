@@ -16,135 +16,109 @@ onHide(() => {
 });
 </script>
 
-<style lang="scss" scoped>
-/* 全局样式重置和基础设置 */
-view,
-text,
-button,
-input,
-textarea,
-image,
-swiper,
-swiper-item,
-scroll-view,
-navigator {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+<style lang="scss">
 
-html,
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+:global(html),
+:global(body) {
+  font-family: 'SF Pro Display', 'PingFang SC', 'Segoe UI', sans-serif;
   font-size: 16px;
-  color: $text-primary;
-  background-color: $background-primary;
+  color: var(--color-text-primary, #1f2937);
+  background: var(--color-bg-primary, #f5f7ff);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
-  /* 移除点击高亮 */
 }
 
-/* 页面容器样式 */
-.container {
+:global(view),
+:global(text),
+:global(button),
+:global(input),
+:global(textarea),
+:global(image),
+:global(swiper),
+:global(swiper-item),
+:global(scroll-view),
+:global(navigator) {
+  font-family: inherit;
+}
+
+:global(.container),
+:global(.chat-container) {
   min-height: 100vh;
-  background-color: $background-primary;
-  position: relative;
+  background: var(--color-bg-primary, #f5f7ff);
 }
 
-.chat-container {
-  min-height: 100vh;
-  background-color: $background-secondary;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-}
-
-/* 按钮基础样式 */
-button {
+:global(button) {
   border: none;
   outline: none;
   cursor: pointer;
   font-size: 16px;
-  font-weight: 500;
-  border-radius: 12px;
-  transition: all 0.2s ease;
-  background-color: $primary-color;
-  color: white;
+  font-weight: 600;
+  border-radius: 14px;
   padding: 12px 24px;
-}
-
-button:active {
-  transform: scale(0.98);
-  opacity: 0.9;
-}
-
-button:disabled {
-  background-color: $text-disabled;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* 输入框基础样式 */
-input,
-textarea {
-  border: 1px solid $border-light;
-  outline: none;
-  border-radius: 12px;
-  padding: 14px 16px;
-  font-size: 16px;
-  transition: all 0.2s ease;
-  background-color: $background-secondary;
-  color: $text-primary;
-}
-
-input:focus,
-textarea:focus {
-  border-color: $primary-color;
-  box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
-}
-
-/* 链接样式 */
-a {
-  color: $primary-color;
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-a:active {
-  opacity: 0.8;
-}
-
-/* 卡片样式 */
-.card {
-  background-color: $background-secondary;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: $shadow-md;
+  color: var(--color-text-inverse, #fff);
+  // background: linear-gradient(120deg, #3b82f6, #6366f1);
+  // box-shadow: 0 12px 24px rgba(99, 102, 241, 0.25);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.card:active {
-  transform: translateY(2px);
-  box-shadow: $shadow-sm;
+:global(button:active) {
+  transform: translateY(1px);
+  // box-shadow: 0 8px 18px rgba(99, 102, 241, 0.18);
 }
 
-/* 滚动条样式 */
-::-webkit-scrollbar {
+:global(button:disabled) {
+  background: rgba(148, 163, 184, 0.5);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+:global(input),
+:global(textarea) {
+  border: 1px solid var(--color-border-subtle, #d1d5db);
+  border-radius: 16px;
+  padding: 14px 16px;
+  font-size: 16px;
+  background: var(--color-bg-card, #fff);
+  color: var(--color-text-primary, #1f2937);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+:global(input:focus),
+:global(textarea:focus) {
+  border-color: rgba(99, 102, 241, 0.8);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+:global(a) {
+  color: var(--color-accent, #6366f1);
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+:global(a:active) {
+  opacity: 0.7;
+}
+
+:global(.card) {
+  background: var(--color-bg-card, #fff);
+  border-radius: 18px;
+  padding: 20px;
+  border: 1px solid var(--color-border-subtle, #e2e8f0);
+  box-shadow: var(--shadow-soft, 0 10px 30px rgba(15, 23, 42, 0.08));
+}
+
+:global(::-webkit-scrollbar) {
   width: 6px;
   height: 6px;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
+:global(::-webkit-scrollbar-thumb) {
+  background: rgba(148, 163, 184, 0.6);
   border-radius: 3px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.3);
+:global(::-webkit-scrollbar-track) {
+  background: transparent;
 }
 </style>
