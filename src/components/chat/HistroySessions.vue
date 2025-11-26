@@ -1,7 +1,6 @@
 <template>
   <view v-if="visible" :class="['overlay', { 'overlay-active': visible }]" @click="handleClose">
     <view :class="['drawer', { 'drawer-open': visible }]" @click.stop>
-      <!-- 顶部拖动条 -->
       <view class="drawer-handle">
         <view class="handle-bar"></view>
       </view>
@@ -38,7 +37,12 @@
             :class="['drawer-item', { active: session.id === props.activeSessionId }]" @click="selectSession(session)">
             <view class="item-header">
               <view class="item-title">{{ session.title || '未命名会话' }}</view>
-              <view class="item-badge" v-if="session.id === props.activeSessionId">当前</view>
+              <view class="item-actions">
+                <view class="delete-btn" @click.stop="confirmDelete(session)"
+                  :class="{ 'deleting': deletingId === session.id }">
+                  <view class="delete-icon"></view>
+                </view>
+              </view>
             </view>
             <view class="item-desc">{{ session.summary || '暂无摘要' }}</view>
             <view class="item-footer">
@@ -46,6 +50,25 @@
             </view>
           </view>
         </scroll-view>
+      </view>
+      <view v-if="showDeleteConfirm" class="confirm-overlay" @click="cancelDelete">
+        <view class="confirm-dialog" @click.stop>
+          <view class="confirm-header">
+            <text class="confirm-title">确认删除</text>
+          </view>
+          <view class="confirm-body">
+            <text class="confirm-text">确定要删除会话"{{ deleteTarget?.title || '未命名会话' }}"吗？</text>
+            <text class="confirm-hint">此操作无法撤销</text>
+          </view>
+          <view class="confirm-actions">
+            <view class="confirm-btn cancel-btn" @click="cancelDelete">
+              <text>取消</text>
+            </view>
+            <view class="confirm-btn delete-confirm-btn" @click="deleteSession">
+              <text>{{ deletingId ? '删除中...' : '删除' }}</text>
+            </view>
+          </view>
+        </view>
       </view>
     </view>
   </view>
@@ -66,12 +89,30 @@ const props = defineProps<{
   visible: boolean;
   activeSessionId?: number | string | null;
 }>();
-const emit = defineEmits<{ (e: 'close'): void; (e: 'select-session', session: SessionItem): void }>();
+const emit = defineEmits<{
+  (e: 'close'): void;
+  (e: 'select-session', session: SessionItem): void;
+  (e: 'delete-session', sessionId: number | string): void;
+}>();
 
 const sessions = ref<SessionItem[]>([]);
 const listHeight = ref(0);
 const loading = ref(false);
 const errorMessage = ref('');
+
+const showDeleteConfirm = ref(false);
+const deleteTarget = ref<SessionItem | null>(null);
+const deletingId = ref<number | string | null>(null);
+
+function confirmDelete(session: SessionItem) {
+  deleteTarget.value = session;
+  showDeleteConfirm.value = true;
+}
+
+function cancelDelete() {
+  showDeleteConfirm.value = false;
+  deleteTarget.value = null;
+}
 
 function handleClose() {
   emit('close');
@@ -102,7 +143,6 @@ function formatTime(time?: string) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-
 async function fetchSessions() {
   loading.value = true;
   errorMessage.value = '';
@@ -116,7 +156,35 @@ async function fetchSessions() {
     loading.value = false;
   }
 }
+async function deleteSession() {
+  if (!deleteTarget.value || deletingId.value) return;
 
+  const sessionId = deleteTarget.value.id;
+  deletingId.value = sessionId;
+
+  try {
+    await request(`http://localhost:3000/api/ai/sessions/${sessionId}/delete`, {}, "POST",);
+    sessions.value = sessions.value.filter(s => s.id !== sessionId);
+    emit('delete-session', sessionId);
+
+    uni.showToast({
+      title: '删除成功',
+      icon: 'success',
+      duration: 2000
+    });
+  } catch (err) {
+    console.error('删除会话失败', err);
+    uni.showToast({
+      title: '删除失败',
+      icon: 'none',
+      duration: 2000
+    });
+  } finally {
+    deletingId.value = null;
+    showDeleteConfirm.value = false;
+    deleteTarget.value = null;
+  }
+}
 function refreshSessions() {
   if (loading.value) return;
   fetchSessions();
@@ -272,12 +340,6 @@ onMounted(() => {
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .error-icon,
 .empty-icon {
   font-size: 64rpx;
@@ -331,7 +393,7 @@ onMounted(() => {
 }
 
 .item-title {
-  flex: 1;
+  width: 70%;
   font-size: 32rpx;
   font-weight: 600;
   color: #0f172a;
@@ -372,5 +434,157 @@ onMounted(() => {
 .item-time {
   font-size: 22rpx;
   color: #94a3b8;
+}
+
+.item-actions {
+  display: flex;
+  align-items: center;
+  padding: 0 20rpx;
+}
+
+.delete-btn {
+  width: 58rpx;
+  height: 58rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:active {
+    transform: scale(0.9);
+    background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+  }
+
+  &.deleting {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+.delete-icon {
+  width: 32rpx;
+  height: 32rpx;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23dc2626' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='3 6 5 6 21 6'%3E%3C/polyline%3E%3Cpath d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'%3E%3C/path%3E%3Cline x1='10' y1='11' x2='10' y2='17'%3E%3C/line%3E%3Cline x1='14' y1='11' x2='14' y2='17'%3E%3C/line%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.2s ease;
+
+  .confirm-dialog {
+    width: 600rpx;
+    background: #ffffff;
+    border-radius: 24rpx;
+    overflow: hidden;
+    box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .confirm-header {
+    padding: 40rpx 32rpx 24rpx;
+    border-bottom: 1rpx solid #f1f5f9;
+
+    .confirm-title {
+      font-size: 36rpx;
+      font-weight: 700;
+      color: #0f172a;
+    }
+  }
+
+  .confirm-body {
+    padding: 32rpx;
+    display: flex;
+    flex-direction: column;
+    gap: 12rpx;
+
+    .confirm-text {
+      font-size: 28rpx;
+      color: #334155;
+      line-height: 1.6;
+    }
+
+    .confirm-hint {
+      font-size: 24rpx;
+      color: #94a3b8;
+    }
+  }
+
+  .confirm-actions {
+    display: flex;
+    gap: 16rpx;
+    padding: 24rpx 32rpx 32rpx;
+
+    .confirm-btn {
+      flex: 1;
+      padding: 24rpx;
+      border-radius: 16rpx;
+      font-size: 28rpx;
+      font-weight: 600;
+      text-align: center;
+      transition: all 0.2s ease;
+
+      &:active {
+        transform: scale(0.96);
+      }
+    }
+
+    .cancel-btn {
+      background: #f1f5f9;
+      color: #64748b;
+
+      &:active {
+        background: #e2e8f0;
+      }
+    }
+
+    .delete-confirm-btn {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: #ffffff;
+
+      &:active {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(40rpx);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 </style>
