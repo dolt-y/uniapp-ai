@@ -1,20 +1,20 @@
-const convertTables = (input: string) => {
-  return input.replace(
-    /^\|(.+)\|\n\|([-:| ]+)\|\n((\|.*\|\n?)*)/gm,
-    (_, headerLine, alignLine, rows) => {
-      const headers = headerLine.split('|').map((h) => h.trim()).filter(Boolean);
-      const rowLines = rows.split('\n').map(r => r.split('|').map(c => c.trim()).filter(Boolean)).filter(Boolean);
+// const convertTables = (input: string) => {
+//   return input.replace(
+//     /^\|(.+)\|\n\|([-:| ]+)\|\n((\|.*\|\n?)*)/gm,
+//     (_, headerLine, alignLine, rows) => {
+//       const headers = headerLine.split('|').map((h) => h.trim()).filter(Boolean);
+//       const rowLines = rows.split('\n').map(r => r.split('|').map(c => c.trim()).filter(Boolean)).filter(Boolean);
 
-      const ths = headers.map(h => `<view class="table-th">${h}</view>`).join('');
-      const trs = rowLines.map(cols => `<view class="table-row">${cols.map(c => `<view class="table-td">${c}</view>`).join('')}</view>`).join('');
+//       const ths = headers.map(h => `<view class="table-th">${h}</view>`).join('');
+//       const trs = rowLines.map(cols => `<view class="table-row">${cols.map(c => `<view class="table-td">${c}</view>`).join('')}</view>`).join('');
 
-      return `<view class="table"><view class="table-header">${ths}</view><view class="table-body">${trs}</view></view>`;
-    }
-  );
-};
+//       return `<view class="table"><view class="table-header">${ths}</view><view class="table-body">${trs}</view></view>`;
+//     }
+//   );
+// };
 const convertCharts = (input: string) =>
   input.replace(/```(linechart|barchart)\n([\s\S]*?)```/g, (_, type, content) => {
-    // content 可以是 JSON 数据或者 CSV 风格数据
+
     return `<chart type="${type}" data='${JSON.stringify(content.trim())}'></chart>`;
   });
 
@@ -113,7 +113,7 @@ export function renderMarkdown(rawContent?: string) {
   output = convertCodeBlocks(output);
   output = convertMermaid(output);
   output = convertBlockQuotes(output);
-  output = convertTables(output);
+  // output = convertTables(output);
   output = convertLists(output);
   output = convertHeadings(output);
   output = convertInline(output);

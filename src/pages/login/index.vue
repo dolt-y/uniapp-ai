@@ -44,7 +44,7 @@
 import { ref } from 'vue';
 import request from '../../utils/request';
 
-const appName = ref('智元 AI 助手');
+const appName = ref('AI问答 助手 ');
 const isAgreed = ref(false);
 
 const statusBarHeight = uni.getSystemInfoSync().statusBarHeight || 0;

@@ -37,10 +37,10 @@
             </view>
           </view>
 
-          <view class="actions-right">
+          <!-- <view class="actions-right">
             <view class="action-btn share-btn" @click="handleShare">
             </view>
-          </view>
+          </view> -->
         </view>
 
         <view v-if="showStatus" class="status-pill" :class="statusClass">
@@ -56,13 +56,8 @@
 import { ref, computed, defineEmits, defineProps, onMounted } from 'vue';
 import { renderMarkdown } from '@/utils/markdown';
 
-const userInfo = ref(null)
+const userInfo = ref(uni.getStorageSync('user'))
 const isCopied = ref(false)
-
-onMounted(() => {
-  userInfo.value = uni.getStorageSync('user')
-  console.log('userInfo', userInfo.value)
-})
 
 const props = defineProps({
   message: {
@@ -282,13 +277,13 @@ const statusClass = computed(() => props.message.status || 'success');
     }
 
     .action-btn {
-      width: 56rpx;
-      height: 56rpx;
-      // border-radius: 50%;
+      width: 46rpx;
+      height: 46rpx;
+      border-radius: 50%;
       // background-color: rgba(0, 0, 0, 0.04);
       background-repeat: no-repeat;
       background-position: center;
-      background-size: 32rpx 32rpx;
+      background-size: 36rpx 36rpx;
       transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
       border: 1rpx solid transparent;
@@ -420,24 +415,6 @@ const statusClass = computed(() => props.message.status || 'success');
     :deep(a) {
       color: #6366f1;
       text-decoration: underline;
-    }
-  }
-
-  .quoted-message {
-    background: rgba(0, 0, 0, 0.04);
-    border-left: 4rpx solid rgba(99, 102, 241, 0.6);
-    border-radius: 8rpx;
-    padding: 16rpx 20rpx;
-    margin-bottom: 16rpx;
-    font-size: 24rpx;
-    color: rgba(0, 0, 0, 0.6);
-    max-height: 140rpx;
-    overflow: hidden;
-
-    .quoted-label {
-      font-weight: 600;
-      color: #6366f1;
-      margin-right: 8rpx;
     }
   }
 

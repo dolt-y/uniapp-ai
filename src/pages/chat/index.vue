@@ -323,13 +323,14 @@ function streamAssistantReply(userMessage, originalText, id) {
       },
       onDone() {
         assistantMessage.status = 'success';
-        // messages.value = [...messages.value];
+        messages.value = [...messages.value];
         isAssistantTyping.value = false;
         resolve();
       },
 
       onError(err: any) {
         assistantMessage.status = 'error';
+        messages.value = [...messages.value];
         showToast('AI 服务异常，请稍后再试', 'error');
         isAssistantTyping.value = false;
         console.error('SSE 出错:', err);
@@ -591,9 +592,11 @@ onUnload(() => {
   }
 
   .chat-body {
-    position: relative;
+    // position: relative;
+    height: 80vh;
+    overflow-y: auto;
     z-index: 1;
-    flex: 1;
+    // flex: 1;
     display: flex;
     flex-direction: column;
     padding: 28rpx 24rpx 20rpx;

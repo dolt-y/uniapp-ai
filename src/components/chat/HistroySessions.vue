@@ -42,7 +42,7 @@
             </view>
             <view class="item-desc">{{ session.summary || '暂无摘要' }}</view>
             <view class="item-footer">
-              <view class="item-time">{{ formatTime(session.created_at) }}</view>
+              <view class="item-time">{{ formatTime(session.updated_at) }}</view>
             </view>
           </view>
         </scroll-view>
@@ -59,7 +59,7 @@ type SessionItem = {
   id: number | string;
   title?: string;
   summary?: string;
-  created_at?: string;
+  updated_at?: string;
 };
 
 const props = defineProps<{
@@ -84,23 +84,24 @@ function selectSession(session: SessionItem) {
 
 function formatTime(time?: string) {
   if (!time) return '';
-  const date = new Date(time);
+
+  const safeTime = time.replace(/-/g, '/');
+
+  const date = new Date(safeTime);
+  if (isNaN(date.getTime())) return '';
+
   const now = new Date();
   const diff = now.getTime() - date.getTime();
 
-  // 小于1分钟
   if (diff < 60000) return '刚刚';
-  // 小于1小时
   if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
-  // 小于24小时
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
-  // 小于7天
   if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`;
 
-  // 否则显示完整日期
   const pad = (val: number) => String(val).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
+
 
 async function fetchSessions() {
   loading.value = true;
