@@ -300,7 +300,7 @@ function streamAssistantReply(userMessage, originalText, id) {
   return new Promise<void>((resolve) => {
 
     streamRequest({
-      url: 'http://localhost:3000/api/ai/chat',
+      url: 'http://10.3.20.101:3000/api/ai/chat',
       data: {
         messages: [
           { role: 'user', content: originalText }
@@ -399,7 +399,7 @@ async function handleSelectSession(session: Session) {
 
   try {
     uni.showLoading({ title: '加载会话...', mask: true });
-    const res: any = await request(`http://localhost:3000/api/ai/sessions/${session.id}/messages`);
+    const res: any = await request(`http://10.3.20.101:3000/api/ai/sessions/${session.id}/messages`);
     const historyMessages = Array.isArray(res?.messages) ? res.messages : [];
     applyHistoryMessages(historyMessages);
     sessionId.value = typeof session.id === 'string' ? session.id : Number(session.id);
@@ -520,7 +520,7 @@ function formatDuration(duration: number): string {
 // 获取用户信息
 function getUserInfo() {
   if (uni.getStorageSync('user')) return
-  request('http://localhost:3000/api/user/info').then(res => {
+  request('http://10.3.20.101:3000/api/user/info').then(res => {
     userInfo.value = res.user;
     uni.setStorageSync('user', res.user)
   })

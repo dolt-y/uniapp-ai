@@ -6,7 +6,8 @@
         "navigationBarTitleText": "登录",
         "navigationBarBackgroundColor": "#ffffff",
         "navigationBarTextStyle": "black",
-        "backgroundColor": "#f5f6f7"
+        "backgroundColor": "#f5f6f7",
+        "navigationStyle":"custom"
       }
     },
     {
@@ -26,6 +27,16 @@
         "navigationBarTextStyle": "black",
         "backgroundColor": "#f5f6f7",
         "enablePullDownRefresh": false
+      }
+    },
+    {
+      "path": "pages/webview/index",
+      "style": {
+        "navigationBarTitleText": "H5聊天",
+        "navigationBarBackgroundColor": "#ffffff",
+        "navigationBarTextStyle": "black",
+        "backgroundColor": "#f5f6f7",
+        "enablePullDownRefresh": false,
       }
     }
   ],

@@ -8,14 +8,14 @@
     </view>
     <view class="message-wrapper">
       <view class="message-header">
-        <view v-if="message.role === 'assistant'" class="message-name">小梦</view>
+        <view v-if="message.role === 'assistant'" class="message-name"></view>
         <view v-else class="message-name">{{ userInfo.nickname }}</view>
         <text class="message-time">{{ formatTime(message.timestamp) }}</text>
       </view>
 
       <view class="message-bubble">
         <view v-if="message.type === 'text'" class="message-content markdown-content">
-          <rich-text :nodes="formattedContent" class="markdown-content"></rich-text>
+          <rich-text mode="compat" :nodes="formatted" class="markdown-content"></rich-text>
         </view>
         <view v-else-if="message.type === 'image'" class="message-image" @click="previewImage(message.content)">
           <image :src="message.content" mode="aspectFill"></image>
@@ -32,7 +32,6 @@
           <view class="actions-left">
             <view class="action-btn copy-btn" @click="handleCopy" :class="{ 'copied': isCopied }">
             </view>
-
             <view class="action-btn regenerate-btn" @click="handleRegenerate">
             </view>
           </view>
@@ -93,7 +92,7 @@ function getStatusText(status) {
 
 function handleCopy() {
   uni.setClipboardData({
-    data: props.message.content,
+    data: formatted.value,
     success: () => {
       isCopied.value = true
       uni.showToast({
@@ -134,7 +133,7 @@ function handleShare() {
   emit('share', props.message)
 }
 
-const formattedContent = computed(() => renderMarkdown(props.message?.content ?? ''));
+const formatted = computed(() => renderMarkdown(props.message.content))
 const showStatus = computed(() => props.message.role === 'user');
 const statusText = computed(() => getStatusText(props.message.status));
 const statusClass = computed(() => props.message.status || 'success');
@@ -195,10 +194,13 @@ const statusClass = computed(() => props.message.status || 'success');
     padding: 24rpx 28rpx;
     border-radius: 20rpx 20rpx 20rpx 4rpx;
     word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
     line-height: 1.7;
     font-size: 28rpx;
     box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow-x: auto;
 
     &:active {
       transform: translateY(2rpx);

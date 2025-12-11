@@ -1,17 +1,7 @@
-// const convertTables = (input: string) => {
-//   return input.replace(
-//     /^\|(.+)\|\n\|([-:| ]+)\|\n((\|.*\|\n?)*)/gm,
-//     (_, headerLine, alignLine, rows) => {
-//       const headers = headerLine.split('|').map((h) => h.trim()).filter(Boolean);
-//       const rowLines = rows.split('\n').map(r => r.split('|').map(c => c.trim()).filter(Boolean)).filter(Boolean);
-
-//       const ths = headers.map(h => `<view class="table-th">${h}</view>`).join('');
-//       const trs = rowLines.map(cols => `<view class="table-row">${cols.map(c => `<view class="table-td">${c}</view>`).join('')}</view>`).join('');
-
-//       return `<view class="table"><view class="table-header">${ths}</view><view class="table-body">${trs}</view></view>`;
-//     }
-//   );
-// };
+// markdown will be converted to html
+const convertTables = (input: string) => {
+  return input.replace(/<table([^>]*)>/gi, '<table$1 style="border: 1px solid #000; border-collapse: collapse;">').replace(/<td([^>]*)>/gi, '<td$1 style="border: 1px solid #000; padding: 5px; text-align: center;">');
+};
 const convertCharts = (input: string) =>
   input.replace(/```(linechart|barchart)\n([\s\S]*?)```/g, (_, type, content) => {
 
@@ -113,12 +103,12 @@ export function renderMarkdown(rawContent?: string) {
   output = convertCodeBlocks(output);
   output = convertMermaid(output);
   output = convertBlockQuotes(output);
-  // output = convertTables(output);
+  output = convertTables(output);
   output = convertLists(output);
   output = convertHeadings(output);
   output = convertInline(output);
   output = convertHr(output);
-  output = output.replace(/\n/g, '<br/>');
+  output = output.replace(/\n(?![^<]*<\/pre>)/g, '<br/>');
   output = convertCharts(output);
   return wrapParagraphs(output);
 

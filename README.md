@@ -124,6 +124,10 @@ const quickReplies = ref<string[]>([
 
 https://github.com/dolt-y/uniapp-ai-server
 
+### 2025.11.27 重构
+
+1. 目前小程序对流式数据处理不兼容，并且rich-text渲染markdown文本存在问题，样式无法处理。因此考虑H5版本的实现。
+
 ## 未来优化方向
 
 1. 集成真实的AI API（如OpenAI、百度文心一言等）

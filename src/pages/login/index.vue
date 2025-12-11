@@ -79,7 +79,7 @@ const handleLogin = () => {
           console.log('wx.login code:', res.code);
           if (res.code) {
             uni.hideLoading();
-            request('http://localhost:3000/api/user/login', {
+            request('http://10.3.20.101:3000/api/user/login', {
               code: res.code,
               userInfo: profile.userInfo
             }, 'POST', false)
@@ -97,7 +97,7 @@ const handleLogin = () => {
                 });
 
                 uni.navigateTo({
-                  url: '/pages/chat/index'
+                  url: '/pages/webview/index'
                 });
               })
               .catch((err: { data: { message: any; }; }) => {
@@ -221,7 +221,6 @@ const openAgreement = (type: string) => {
   width: 80%;
   padding: 60rpx 48rpx;
   border-radius: 36rpx;
-  // background: rgba(255, 255, 255, 0.92);
   border: 1rpx solid rgba(148, 163, 184, 0.25);
   box-shadow: 0 40rpx 80rpx rgba(79, 70, 229, 0.18);
   backdrop-filter: blur(18px);

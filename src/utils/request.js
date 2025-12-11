@@ -21,9 +21,14 @@ export default function request(url, data = {}, method = 'GET', showError = true
                 } else {
                     if (showError) {
                         uni.showToast({
-                            title: res.data?.message || '请求失败',
+                            title: res.data?.msg || '请求失败',
                             icon: 'none'
                         });
+                        setTimeout(() => {
+                            uni.redirectTo({
+                                url: '/pages/login/index'
+                            });
+                        }, 1500);
                     }
                     reject(res);
                 }
